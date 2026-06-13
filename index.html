@@ -717,6 +717,7 @@ try{
     <div class="row" style="margin-top:10px; gap:6px;">
       <button class="btn ghost sm" onclick="exportExcel()">📊 엑셀</button>
       <button class="btn ghost sm" onclick="exportPptx()">📑 PPT</button>
+      <button class="btn ghost sm" onclick="exportDocx()">📄 워드</button>
       <button class="btn ghost sm" onclick="copyBrief()">📋 복사</button>
       <button class="btn ghost sm" onclick="shareBriefing()">📤 공유</button>
       <button class="btn ghost sm" onclick="printBrief()">🖨️ 인쇄</button>
@@ -1851,6 +1852,36 @@ async function exportPptx(){
     await pptx.writeFile({fileName:`concierge-report-${reportStamp()}.pptx`});
     toast('PPT 보고서를 내려받았습니다 📑');
   }catch(e){ toast('PPT 생성 실패 — 인터넷 연결을 확인하세요'); }
+}
+const DOCX_CDN = 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';
+async function exportDocx(){
+  const text = (document.getElementById('brief-txt') && document.getElementById('brief-txt').value) || makeBriefing();
+  toast('워드 문서 생성 중…');
+  try{
+    if(!window.docx) await loadScript(DOCX_CDN);
+    const D = window.docx;
+    if(!D || !D.Document || !D.Packer) throw new Error('docx lib');
+    const children = text.split('\n').map(ln=>{
+      if(/^\[.*교대 브리핑/.test(ln)) return new D.Paragraph({ children:[new D.TextRun({text:ln, bold:true, size:30})], spacing:{after:140} });
+      if(ln.indexOf('■')===0)          return new D.Paragraph({ children:[new D.TextRun({text:ln, bold:true, size:26})], spacing:{before:180, after:60} });
+      return new D.Paragraph({ children:[new D.TextRun({text:ln, size:22})] });
+    });
+    const doc = new D.Document({ sections:[{ children }] });
+    const blob = await D.Packer.toBlob(doc);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`concierge-report-${reportStamp()}.docx`; a.click(); URL.revokeObjectURL(a.href);
+    toast('워드 문서를 내려받았습니다 📄');
+  }catch(e){ docFallback(text); }
+}
+function docFallback(text){
+  /* 라이브러리 로드 실패(오프라인 등) 시 워드에서 열리는 HTML(.doc)로 대체 */
+  const esc2 = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const body = esc2(text).replace(/\n/g,'<br>');
+  const html = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'></head><body style=\"font-family:'Malgun Gothic','맑은 고딕',sans-serif; font-size:11pt; white-space:pre-wrap;\">" + body + "</body></html>";
+  const blob = new Blob(['﻿'+html], {type:'application/msword'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`concierge-report-${reportStamp()}.doc`; a.click(); URL.revokeObjectURL(a.href);
+  toast('오프라인이라 워드(.doc)로 저장했습니다');
 }
 
 /* ---------------- Firebase 구글 로그인 + 동기화 ---------------- */
