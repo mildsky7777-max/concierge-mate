@@ -41,7 +41,7 @@ try{
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
-    background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:96px;
+    background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:calc(env(safe-area-inset-bottom) + 62px);
     transition:background .25s;
   }
   /* ---------- header ---------- */
@@ -68,7 +68,7 @@ try{
   }
   nav button{
     flex:1; border:none; background:none; padding:9px 0 11px; cursor:pointer;
-    color:var(--muted); font-size:10.5px; font-weight:600;
+    color:var(--muted); font-size:10.5px; font-weight:600; white-space:nowrap; overflow:hidden;
   }
   nav button .ico{display:block; font-size:19px; margin-bottom:3px;}
   nav button.on{color:var(--gold);}
@@ -104,6 +104,11 @@ try{
   .btn.rec{background:var(--danger); color:#fff; animation:pulse 1s infinite;}
   @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.5;}}
   #authBtn.in{background:var(--gold); color:#2c2410; border-color:var(--gold);}
+  .note-badge{display:inline-block; font-size:11px; font-weight:700; color:var(--doing); background:var(--doing-bg); border-radius:6px; padding:2px 7px; margin-left:6px; cursor:pointer;}
+  .chip.tag.on{background:var(--doing); border-color:var(--doing); color:#fff;}
+  .gtag{display:inline-block; font-size:11px; font-weight:700; background:var(--badge); color:var(--navy); border-radius:6px; padding:2px 7px; margin:0 4px 4px 0;}
+  .gn h3{font-size:15px; display:inline;}
+  .gn .gn-room{font-weight:800; color:var(--room-ink); background:var(--gold-soft); border-radius:8px; padding:2px 9px; font-size:13px; margin-right:8px;}
   .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
   .chip{
     border:1px solid var(--line); background:var(--card); border-radius:999px;
@@ -193,16 +198,16 @@ try{
   .memo.pinned{border-color:var(--gold);}
   /* ---------- overlays ---------- */
   #big{
-    position:fixed; inset:0; z-index:100; background:#1d2a44; color:#fff;
+    position:fixed; inset:0; z-index:100; background:var(--hd); color:var(--hd-ink);
     display:none; flex-direction:column; justify-content:center; align-items:center;
     padding:30px; text-align:center; cursor:pointer;
   }
   #big.on{display:flex;}
   #big .txt{font-size:clamp(28px,6vw,52px); font-weight:800; line-height:1.35; word-break:keep-all;}
-  #big .sub{margin-top:18px; color:#c2a36b; font-size:15px;}
-  #big .close{position:absolute; top:calc(18px + env(safe-area-inset-top)); right:22px; font-size:13px; color:#9fb0cc;}
+  #big .sub{margin-top:18px; color:var(--gold); font-size:15px;}
+  #big .close{position:absolute; top:calc(18px + env(safe-area-inset-top)); right:22px; font-size:13px; color:var(--hd-sub);}
   #big-spk{
-    margin-top:26px; font-size:16px; border:1px solid #c2a36b; background:none; color:#c2a36b;
+    margin-top:26px; font-size:16px; border:1px solid var(--gold); background:none; color:var(--gold);
     border-radius:999px; padding:9px 22px; cursor:pointer; font-weight:700;
   }
   #sheet-bk{position:fixed; inset:0; z-index:88; background:rgba(0,0,0,.45); display:none;}
@@ -228,7 +233,7 @@ try{
   #brief textarea{font-size:12.5px; min-height:240px; font-family:inherit;}
   /* ---------- toasts ---------- */
   #toasts{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:86px; z-index:120;
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 62px); z-index:120;
     display:flex; flex-direction:column; gap:8px; align-items:center; width:max-content; max-width:92vw;
   }
   .toast{
@@ -272,6 +277,7 @@ try{
   <button data-t="ho"><span class="ico">🔄</span>인계</button>
   <button data-t="gd"><span class="ico">🗺️</span>가이드</button>
   <button data-t="ph"><span class="ico">💬</span>회화</button>
+  <button data-t="guest" class="sec"><span class="ico">🧑</span>게스트</button>
   <button data-t="tool" class="sec"><span class="ico">🧰</span>도구</button>
   <button data-t="ck" class="sec"><span class="ico">✅</span>체크</button>
   <button data-t="mm" class="sec"><span class="ico">📌</span>메모</button>
@@ -332,6 +338,7 @@ try{
       <button class="btn ghost" id="r-cancel" style="display:none;" onclick="cancelReqEdit()">취소</button>
       <button class="btn gold" id="r-add" onclick="saveReq()">접수</button>
     </div>
+    <div class="chips" id="r-tpl" style="margin-top:10px;"></div>
   </div>
   <div class="chips" id="r-filter">
     <span class="chip on" data-f="all">전체</span>
@@ -417,6 +424,27 @@ try{
     </div>
   </div>
   <button class="btn wide" onclick="openPhForm()">＋ 문구 추가</button>
+</section>
+
+<!-- ============ 게스트 노트 ============ -->
+<section id="sec-guest">
+  <p class="hint">객실별 게스트 특이사항(VIP·알레르기·기념일·선호)을 메모해 두면, 요청 보드에서 해당 객실에 🧑 표시가 떠요.</p>
+  <div class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <input id="gn-room" placeholder="객실" inputmode="numeric" style="width:90px; flex:none;">
+      <input id="gn-name" placeholder="게스트 이름 (선택)" style="flex:1;">
+    </div>
+    <div class="chips" id="gn-tagpick" style="margin-bottom:8px;"></div>
+    <div class="row">
+      <textarea id="gn-note" placeholder="특이사항 (예: 고층 선호, 견과류 알레르기, 결혼기념일)"></textarea>
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-top:8px;">
+      <button class="btn ghost" id="gn-cancel" style="display:none;" onclick="cancelGuestEdit()">취소</button>
+      <button class="btn gold" id="gn-add" onclick="saveGuest()">저장</button>
+    </div>
+  </div>
+  <input id="gn-q" placeholder="🔍 객실·이름·내용 검색" oninput="renderGuests()" style="margin-bottom:10px;">
+  <div id="gn-list"></div>
 </section>
 
 <!-- ============ 도구 ============ -->
@@ -545,10 +573,10 @@ try{
       <ol style="font-size:12.5px; color:var(--ink); opacity:.9; line-height:1.7; margin:10px 0 0 18px;">
         <li><a href="https://console.firebase.google.com" target="_blank" rel="noopener" style="color:var(--doing);">Firebase 콘솔</a>에서 프로젝트 생성 (구글 계정으로 로그인).</li>
         <li>좌측 <b>빌드 → Authentication → 시작하기 → Google</b> 사용 설정.</li>
-        <li><b>빌드 → Firestore Database → 데이터베이스 만들기</b> (프로덕션/테스트 아무거나).</li>
+        <li><b>빌드 → Firestore Database → 데이터베이스 만들기</b> → <b>프로덕션 모드</b> 선택 (테스트 모드는 30일간 데이터 전체 공개됨).</li>
         <li>프로젝트 설정(⚙️) → <b>내 앱 → 웹(&lt;/&gt;)</b> 추가 → <b>firebaseConfig</b> 값을 복사.</li>
-        <li>아래 칸에 붙여넣고 저장 → 페이지 새로고침.</li>
-        <li>Authentication → Settings → <b>승인된 도메인</b>에 <code id="fb-domain">이 사이트 주소</code> 추가.</li>
+        <li>아래 칸에 붙여넣고 <b>저장 버튼</b>을 누르세요 (자동으로 새로고침됩니다).</li>
+        <li>Authentication → <b>Settings(설정)</b> 또는 <b>Sign-in method(로그인 방법)</b> 탭의 <b>승인된 도메인</b>에 <code id="fb-domain">이 사이트 주소</code> 추가.</li>
       </ol>
       <textarea id="s-fbconfig" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}' style="margin-top:10px; min-height:90px; font-size:11px; font-family:monospace;"></textarea>
       <div class="row" style="justify-content:flex-end; margin-top:8px;">
@@ -560,6 +588,7 @@ try{
     <h2>💾 데이터</h2>
     <div class="tools" style="margin-top:0;">
       <button class="btn ghost sm" onclick="openBrief()">📊 보고서 내보내기</button>
+      <button class="btn ghost sm" onclick="shareApp()">📤 앱 공유</button>
       <button class="btn ghost sm" onclick="exportData()">⬇️ 데이터 백업</button>
       <button class="btn ghost sm" onclick="document.getElementById('imp-file').click()">⬆️ 백업 불러오기</button>
       <input type="file" id="imp-file" accept=".json" style="display:none;" onchange="importData(this)">
@@ -583,10 +612,12 @@ try{
 <div id="sheet-bk" onclick="closeSheet()"></div>
 <div id="sheet">
   <div class="grid">
+    <button onclick="switchTab('guest'); closeSheet();"><span>🧑</span>게스트 노트</button>
     <button onclick="switchTab('tool'); closeSheet();"><span>🧰</span>도구 (환율·택시카드)</button>
     <button onclick="switchTab('ck'); closeSheet();"><span>✅</span>체크리스트</button>
     <button onclick="switchTab('mm'); closeSheet();"><span>📌</span>메모</button>
     <button onclick="switchTab('set'); closeSheet();"><span>⚙️</span>설정</button>
+    <button onclick="shareApp(); closeSheet();"><span>📤</span>앱 공유하기</button>
   </div>
 </div>
 
@@ -599,6 +630,7 @@ try{
       <button class="btn ghost sm" onclick="exportExcel()">📊 엑셀</button>
       <button class="btn ghost sm" onclick="exportPptx()">📑 PPT</button>
       <button class="btn ghost sm" onclick="copyBrief()">📋 복사</button>
+      <button class="btn ghost sm" onclick="shareBriefing()">📤 공유</button>
       <button class="btn gold sm" style="margin-left:auto;" onclick="closeBrief()">닫기</button>
     </div>
     <p class="meta" style="margin-top:8px;">엑셀·PPT는 현재 저장된 요청·인수인계·체크리스트를 보고서로 내보냅니다.</p>
@@ -613,7 +645,7 @@ const S = {
   get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
-const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_settings','cm_fx','cm_seed2','cm_seed3'];
+const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_notes','cm_settings','cm_fx','cm_seed2','cm_seed3'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 const fmt = ts => { const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -689,12 +721,13 @@ function cycleTheme(){
 }
 
 /* ---------------- 탭 & 시트 ---------------- */
-const SEC_TABS = ['tool','ck','mm','set'];
+const SEC_TABS = ['guest','tool','ck','mm','set'];
 function switchTab(t){
   document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.getElementById('moreBtn').classList.toggle('on', SEC_TABS.includes(t));
   document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on', s.id==='sec-'+t));
   if(t==='hm') renderHome();
+  if(t==='guest' && typeof renderGuests==='function') renderGuests();
   window.scrollTo({top:0});
 }
 document.getElementById('tabs').addEventListener('click', e=>{
@@ -749,6 +782,7 @@ function editReq(id){
 function cancelReqEdit(){
   reqEditId = null;
   ['r-room','r-txt','r-due'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('r-cat').selectedIndex = 0;
   document.getElementById('r-pri').checked = false;
   document.getElementById('r-add').textContent = '접수';
   document.getElementById('r-cancel').style.display = 'none';
@@ -792,6 +826,7 @@ function renderReq(){
       <div class="req-body">
         <span class="meta">${esc(x.cat)} · 접수 ${fmt(x.ts)}</span>
         ${x.pri?'<span class="pri-hi"> ⚡긴급</span>':''}
+        ${(typeof roomNote==='function' && roomNote(x.room)) ? `<span class="note-badge" data-room="${esc(x.room)}" onclick="openGuestRoom(this.dataset.room)">🧑 게스트 노트</span>` : ''}
         ${x.due && x.st<2 ? `<div class="meta" style="margin-top:2px;">${dueLabel(x.due)}</div>` : ''}
         <p>${esc(x.txt)}</p>
         <span class="badge st s${x.st}" onclick="cycleReq('${x.id}')">● ${ST_LABEL[x.st]} → 탭하여 변경</span>
@@ -1010,6 +1045,7 @@ function renderGd(){
         <a class="btn ghost sm" style="text-decoration:none;" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${enc}">구글맵</a>
         ${p.tel?`<a class="btn ghost sm" href="tel:${esc(p.tel)}" style="text-decoration:none;">전화</a>`:''}
         <button class="btn ghost sm" onclick="showPlace('${p.id}')">게스트에게</button>
+        <button class="btn ghost sm" onclick="sharePlace('${p.id}')">📤 공유</button>
         <button class="btn ghost sm" onclick="openGdForm('${p.id}')">수정</button>
         <button class="btn danger sm" onclick="delGd('${p.id}')">삭제</button>
       </div>
@@ -1358,7 +1394,7 @@ function importData(input){
   r.onload = () => {
     try{
       const data = JSON.parse(r.result);
-      const ARR_KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_guestcards'];
+      const ARR_KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_guestcards','cm_notes'];
       const OBJ_KEYS = ['cm_checklist','cm_checkstate','cm_settings','cm_fx'];
       KEYS.forEach(k => {
         if(!(k in data)) return;
@@ -1378,12 +1414,7 @@ function importData(input){
   };
   r.readAsText(f); input.value='';
 }
-function wipeAll(){
-  if(!confirm('모든 데이터(요청·인수인계·가이드·메모·설정)를 삭제합니다. 계속할까요?')) return;
-  if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
-  KEYS.forEach(k=>localStorage.removeItem(k));
-  location.reload();
-}
+/* wipeAll은 확장 스크립트 블록에서 클라우드 삭제까지 포함해 재정의됩니다. */
 
 /* ================= 홈 대시보드 ================= */
 function renderHome(){
@@ -1517,7 +1548,7 @@ function seedChecklist(){
   if(!S.get('cm_seed3', false)){ fixSeedPlaceTypos(); }  /* 기존 설치 사용자의 시드 문구 오타 1회 교정 */
 
   /* 키보드 단축키: 1~9 탭 전환, ESC 닫기 */
-  const ORDER = ['hm','req','ho','gd','ph','tool','ck','mm','set'];
+  const ORDER = ['hm','req','ho','gd','ph','guest','tool','ck','mm','set'];
   document.addEventListener('keydown', e=>{
     if(e.key === 'Escape'){ closeBig(); closeSheet(); closeBrief(); return; }
     if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
@@ -1529,9 +1560,15 @@ function seedChecklist(){
   setInterval(applyTheme, 60000); applyTheme();
   setInterval(checkDue, 30000);
   setInterval(()=>{ if(document.getElementById('sec-req').classList.contains('on')) renderReq(); }, 60000);
+  /* 자정 체크리스트 자동 초기화 (페이지를 켜둔 채 날짜가 바뀌어도 반영) */
+  (function scheduleMidnight(){
+    const n = new Date();
+    const ms = new Date(n.getFullYear(), n.getMonth(), n.getDate()+1, 0, 0, 5) - n;
+    setTimeout(()=>{ ensureCkDate(); renderCk(); renderHome(); scheduleMidnight(); }, ms);
+  })();
   fxRender(); renderSet(); renderAll();
 })();
-function renderAll(){ renderReq(); renderHo(); renderGd(); renderPh(); renderCards(); renderCk(); renderMm(); renderHome(); }
+function renderAll(){ renderReq(); renderHo(); renderGd(); renderPh(); renderCards(); renderCk(); renderMm(); renderHome(); if(typeof renderGuests==='function') renderGuests(); }
 </script>
 
 <script>
@@ -1572,11 +1609,15 @@ function dictate(targetId, btn){
 }
 
 /* ---------------- 보고서 내보내기 (엑셀 / PPT) ---------------- */
+const _scriptCache = {};
 function loadScript(src){
-  return new Promise((res,rej)=>{
+  if(_scriptCache[src]) return _scriptCache[src];   /* 동시 클릭 시 중복 주입 방지 */
+  _scriptCache[src] = new Promise((res,rej)=>{
     const s=document.createElement('script'); s.src=src;
-    s.onload=res; s.onerror=()=>rej(new Error('load fail')); document.head.appendChild(s);
+    s.onload=res; s.onerror=()=>{ delete _scriptCache[src]; rej(new Error('load fail')); };
+    document.head.appendChild(s);
   });
+  return _scriptCache[src];
 }
 function reportStamp(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
 
@@ -1597,16 +1638,31 @@ async function exportExcel(){
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ckAoa), '체크리스트');
     XLSX.writeFile(wb, `concierge-report-${reportStamp()}.xlsx`);
     toast('엑셀 보고서를 내려받았습니다 📊');
-  }catch(e){ exportCsvFallback(); }
+  }catch(e){
+    if(!window.XLSX) exportCsvFallback();
+    else toast('엑셀 저장 실패: ' + (e && e.message ? e.message : String(e)));
+  }
 }
 function exportCsvFallback(){
   const rows = [['객실','분류','내용','상태','긴급','예약시간','접수시각']];
   S.get('cm_req',[]).forEach(x=>rows.push([x.room,x.cat,x.txt,ST_LABEL[x.st]||'',x.pri?'긴급':'',x.due?fmt(x.due):'',fmt(x.ts)]));
-  const csv = '﻿' + rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`concierge-report-${reportStamp()}.csv`; a.click(); URL.revokeObjectURL(a.href);
-  toast('오프라인이라 CSV로 저장했습니다 (엑셀에서 열림)');
+  const csv = '\uFEFF' + rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const stamp = reportStamp();
+  const dlCsv = (text, name) => {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
+    a.download=name; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const csvOf = rs => '﻿' + rs.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  dlCsv(csv, `concierge-report-${stamp}-요청.csv`);
+  const hoRows=[['교대','중요','확인여부','내용','기록시각']];
+  S.get('cm_ho',[]).forEach(x=>hoRows.push([x.shift,x.imp?'중요':'',x.ok?'확인':'미확인',x.txt,fmt(x.ts)]));
+  dlCsv(csvOf(hoRows), `concierge-report-${stamp}-인수인계.csv`);
+  const ckc=getCk(), cst=S.get('cm_checkstate',{done:{}});
+  const ckRows=[['근무','항목','완료']];
+  ['day','night'].forEach(sh=>(ckc[sh]||[]).forEach(it=>ckRows.push([sh==='day'?'주간':'야간',it.txt,(cst.done||{})[it.id]?'완료':''])));
+  dlCsv(csvOf(ckRows), `concierge-report-${stamp}-체크리스트.csv`);
+  toast('오프라인이라 CSV 3개로 저장했습니다 (요청·인수인계·체크리스트)');
 }
 async function exportPptx(){
   toast('PPT 보고서 생성 중…');
@@ -1637,9 +1693,17 @@ async function exportPptx(){
     if(reqs.length>12) sl.addText(`외 ${reqs.length-12}건`, {x:0.4,y:5.1,w:9,h:0.3,fontSize:10,color:'888888'});
     sl = pptx.addSlide();
     sl.addText('인수인계 (미확인)', {x:0.5,y:0.35,w:9,h:0.6,fontSize:24,bold:true,color:NAVY});
-    const hos = S.get('cm_ho',[]).filter(x=>!x.ok).slice(0,12);
+    const hosAll = S.get('cm_ho',[]).filter(x=>!x.ok);
+    // At fontSize 14 with \n\n separators each item ~0.58 in; box h=4.2 in fits ~7 items.
+    // At fontSize 11 each item ~0.46 in; fits ~9 items.
+    const HO_MAX = hosAll.length > 7 ? 9 : 7;
+    const HO_FS  = hosAll.length > 7 ? 11 : 14;
+    const hos = hosAll.slice(0, HO_MAX);
+    const hoOverflow = hosAll.length > HO_MAX;
     sl.addText(hos.length ? hos.map(x=>`• ${x.imp?'[중요] ':''}${x.txt.replace(/\n/g,' ')}`).join('\n\n') : '미확인 인수인계가 없습니다.',
-      {x:0.6,y:1.1,w:8.8,h:4.2,fontSize:14,color:'333333',valign:'top'});
+      {x:0.6,y:1.1,w:8.8,h:4.2,fontSize:HO_FS,color:'333333',valign:'top'});
+    if(hoOverflow) sl.addText(`외 ${hosAll.length-HO_MAX}건 — 전체 목록은 앱에서 확인하세요`,
+      {x:0.6,y:5.25,w:8.8,h:0.28,fontSize:9,color:'888888',italic:true});
     await pptx.writeFile({fileName:`concierge-report-${reportStamp()}.pptx`});
     toast('PPT 보고서를 내려받았습니다 📑');
   }catch(e){ toast('PPT 생성 실패 — 인터넷 연결을 확인하세요'); }
@@ -1666,7 +1730,7 @@ async function fbInit(){
     const {appMod, authMod, fsMod} = await fbLoad();
     const app = appMod.initializeApp(cfg);
     FB = {app, auth: authMod.getAuth(app), db: fsMod.getFirestore(app), authMod, fsMod, user:null};
-    authMod.getRedirectResult(FB.auth).catch(()=>{});
+    authMod.getRedirectResult(FB.auth).catch(err=>{ const c=(err&&(err.code||err.message))||''; if(c) toast('로그인 실패: '+c); });
     authMod.onAuthStateChanged(FB.auth, u=>{
       FB.user = u; renderCloud(u, 'ready');
       if(u) onLogin(); else stopSync();
@@ -1684,18 +1748,26 @@ function authClick(){
   });
 }
 function userDoc(){ return FB.fsMod.doc(FB.db, 'users', FB.user.uid); }
+function localTs(){ return Number(localStorage.getItem('cm_localTs')) || 0; }
 async function onLogin(){
   try{
     const snap = await FB.fsMod.getDoc(userDoc());
-    if(snap.exists()) applyRemote(snap.data());
-    else await cloudPushNow();          /* 첫 로그인: 이 기기 데이터를 올림 */
-  }catch(e){ toast('동기화 읽기 실패'); }
+    if(snap.exists()){
+      const remote = snap.data();
+      /* 이 기기에 클라우드보다 최신 변경이 있으면(오프라인 편집 등) 덮어쓰기 전에 확인 */
+      if(localTs() && remote.updatedAt && localTs() > remote.updatedAt + 2000){
+        if(confirm('이 기기에 클라우드보다 최신 변경이 있습니다.\n이 기기 내용을 클라우드에 올릴까요?\n(취소하면 클라우드 내용으로 이 기기를 덮어씁니다)'))
+          await cloudPushNow();
+        else applyRemote(remote);
+      } else applyRemote(remote);
+    } else await cloudPushNow();          /* 첫 로그인: 이 기기 데이터를 올림 */
+  }catch(e){ toast('동기화 읽기 실패 — 권한/규칙을 확인하세요'); return; }   /* 실패 시 리스너를 켜지 않음 */
   _unsub = FB.fsMod.onSnapshot(userDoc(), snap=>{
     if(!snap.exists() || snap.metadata.hasPendingWrites) return;
     const remote = snap.data();
     if(remote._src === clientId) return;  /* 내 기기가 올린 변경은 무시 */
     applyRemote(remote);
-  });
+  }, err=>{ toast('동기화 오류: '+(err.code||err.message||'')); stopSync(); });
   window.__cloudReady = true;
   toast('☁️ 동기화가 켜졌습니다');
 }
@@ -1703,6 +1775,7 @@ function stopSync(){ window.__cloudReady=false; if(_unsub){ _unsub(); _unsub=nul
 function applyRemote(remote){
   _applyingRemote = true;
   KEYS.forEach(k=>{ if(k in remote) localStorage.setItem(k, JSON.stringify(remote[k])); });
+  if(remote.updatedAt) localStorage.setItem('cm_localTs', String(remote.updatedAt));  /* 로컬 시계를 클라우드에 맞춤 */
   _applyingRemote = false;
   applyTheme(); fxRender(); renderSet(); renderAll();
 }
@@ -1713,9 +1786,11 @@ function scheduleCloudPush(){
 }
 async function cloudPushNow(){
   if(!FB || !FB.user) return;
-  const data = {_src: clientId, updatedAt: Date.now()};
+  const data = {_src: clientId, updatedAt: localTs() || Date.now()};
   KEYS.forEach(k=>{ const v = S.get(k, null); if(v !== null) data[k] = v; });
-  try{ await FB.fsMod.setDoc(userDoc(), data); }catch(e){}
+  if(JSON.stringify(data).length > 900000){ toast('⚠️ 데이터가 너무 커서 동기화할 수 없습니다. 오래된 항목을 정리해 주세요.'); return; }
+  try{ await FB.fsMod.setDoc(userDoc(), data); }
+  catch(e){ toast('⚠️ 클라우드 동기화 실패: ' + (e && (e.code||e.message) || e)); }
 }
 function renderCloud(user, state){
   const btn = document.getElementById('authBtn');
@@ -1746,7 +1821,18 @@ function saveFbConfig(){
   const m = raw.match(/\{[\s\S]*\}/);
   const src = m ? m[0] : raw;
   try{
-    let obj; try{ obj = JSON.parse(src); }catch(_){ obj = (new Function('return ('+src+')'))(); }
+    let obj;
+    try{ obj = JSON.parse(src); }
+    catch(_){
+      /* Firebase 콘솔의 JS 객체 형식(따옴표 없는 키·후행 콤마)을 JSON으로 정규화 (eval 미사용) */
+      const normalized = src
+        .replace(/\/\/[^\n]*/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)\s*:/g, '$1"$2":')
+        .replace(/'/g, '"')
+        .replace(/,\s*([}\]])/g, '$1');
+      obj = JSON.parse(normalized);
+    }
     if(!obj || !obj.apiKey || !obj.projectId) throw new Error('필수값 누락');
     localStorage.setItem('cm_fbcfg', JSON.stringify(obj));
     toast('저장됨 · 새로고침합니다'); setTimeout(()=>location.reload(), 700);
@@ -1754,24 +1840,178 @@ function saveFbConfig(){
 }
 
 /* wipeAll 재정의: 로그인 상태면 클라우드 문서도 함께 삭제 (설정값 cm_fbcfg는 유지) */
-function wipeAll(){
+async function wipeAll(){
   if(!confirm('모든 데이터(요청·인수인계·가이드·메모·설정)를 삭제합니다. 계속할까요?')) return;
   if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
   KEYS.forEach(k=>localStorage.removeItem(k));
-  if(FB && FB.user){ try{ FB.fsMod.deleteDoc(userDoc()); }catch(e){} }
+  localStorage.removeItem('cm_localTs');
+  if(FB && FB.user){ try{ await FB.fsMod.deleteDoc(userDoc()); }catch(e){} }  /* 새로고침 전 클라우드 삭제 완료 대기 */
   location.reload();
 }
 
 /* ---------------- 확장 초기화 ---------------- */
 (function extInit(){
   const _origSet = S.set.bind(S);
-  S.set = function(k,v){ _origSet(k,v); scheduleCloudPush(); };   /* 저장 시 클라우드 푸시 예약 */
+  S.set = function(k,v){ _origSet(k,v); if(!_applyingRemote) localStorage.setItem('cm_localTs', String(Date.now())); scheduleCloudPush(); };   /* 로컬 변경 시각 기록 + 클라우드 푸시 예약 */
   const dom = document.getElementById('fb-domain'); if(dom) dom.textContent = location.hostname || '(로컬 파일)';
   const cfg = localStorage.getItem('cm_fbcfg');
   if(cfg){ try{ document.getElementById('s-fbconfig').value = JSON.stringify(JSON.parse(cfg), null, 2); }catch(e){} }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR) document.querySelectorAll('[onclick^="dictate"]').forEach(b=>b.style.display='none');
   fbInit();
+})();
+</script>
+
+<script>
+/* =====================================================================
+   v3: 공유하기(Web Share) · 게스트 노트 · 빠른 요청 템플릿
+   ===================================================================== */
+
+/* ---------------- 공유 (Web Share API) ---------------- */
+function appUrl(){ return location.origin + location.pathname; }
+function shareContent(data){
+  if(navigator.share){
+    navigator.share(data).catch(e=>{ if(e && e.name==='AbortError') return; fallbackShare(data, true); });
+  } else fallbackShare(data, false);
+}
+function fallbackShare(data, apiPresent){
+  const txt = [data.text, data.url].filter(Boolean).join('\n');
+  const done = ()=>toast((apiPresent ? '공유에 실패해' : '이 기기는 공유 시트를 지원하지 않아') + ' 클립보드에 복사했어요 — 카톡/라인에 붙여넣으세요 📋');
+  const fail = ()=>toast('클립보드 복사에 실패했어요. 직접 텍스트를 선택해 복사해 주세요.');
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(()=>execCopy(txt, done, fail));
+  else execCopy(txt, done, fail);
+}
+function execCopy(txt, done, fail){
+  try{
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    const ok=document.execCommand('copy'); document.body.removeChild(ta);
+    ok ? done() : fail();
+  }catch(e){ fail(); }
+}
+function shareApp(){
+  const s = getSettings();
+  shareContent({title:'컨시어지 메이트', text:`${s.hname||'호텔'} 컨시어지 업무 보조 앱`, url:appUrl()});
+}
+function shareBriefing(){
+  const txt = (document.getElementById('brief-txt').value || '').trim() || makeBriefing();
+  shareContent({title:'교대 브리핑', text:txt});
+}
+function sharePlace(id){
+  const p = S.get('cm_places', []).find(x=>x.id===id); if(!p) return;
+  const map = 'https://map.naver.com/p/search/' + encodeURIComponent(p.name);
+  const text = `📍 ${p.name}${p.dist?' ('+p.dist+')':''}${p.desc?'\n'+p.desc:''}${p.tel?'\n☎️ '+p.tel:''}`;
+  shareContent({title:p.name, text, url:map});
+}
+
+/* ---------------- 게스트 노트 ---------------- */
+const GN_TAGS = ['VIP','단골','알레르기','기념일','고층 선호','금연','조용한 방','휠체어','반려동물','얼리 체크인','레이트 체크아웃'];
+let guestEditId = null, guestTags = [];
+function buildGnTags(){
+  const el = document.getElementById('gn-tagpick'); if(!el) return;
+  el.innerHTML = GN_TAGS.map(t=>`<span class="chip tag ${guestTags.includes(t)?'on':''}" onclick="toggleGnTag('${t}')">${t}</span>`).join('');
+}
+function toggleGnTag(t){
+  const i = guestTags.indexOf(t);
+  if(i<0) guestTags.push(t); else guestTags.splice(i,1);
+  buildGnTags();
+}
+function saveGuest(){
+  const room = document.getElementById('gn-room').value.trim();
+  const name = document.getElementById('gn-name').value.trim();
+  const note = document.getElementById('gn-note').value.trim();
+  if(!room){ toast('객실 번호를 입력하세요'); return; }
+  if(!note && !guestTags.length && !name){ toast('태그나 내용을 입력하세요'); return; }
+  const list = S.get('cm_notes', []);
+  const data = { room, name, tags: guestTags.slice(), note };
+  if(guestEditId){ const it = list.find(x=>x.id===guestEditId); if(it) Object.assign(it, data); toast('게스트 노트를 수정했습니다'); }
+  else list.unshift({ id:uid(), ...data, ts:Date.now() });
+  S.set('cm_notes', list); cancelGuestEdit(); renderGuests(); renderReq();
+}
+function editGuest(id){
+  const it = S.get('cm_notes', []).find(x=>x.id===id); if(!it) return;
+  guestEditId = id;
+  document.getElementById('gn-room').value = it.room;
+  document.getElementById('gn-name').value = it.name || '';
+  document.getElementById('gn-note').value = it.note || '';
+  guestTags = (it.tags||[]).slice(); buildGnTags();
+  document.getElementById('gn-add').textContent = '수정 저장';
+  document.getElementById('gn-cancel').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelGuestEdit(){
+  guestEditId = null; guestTags = [];
+  ['gn-room','gn-name','gn-note'].forEach(i=>document.getElementById(i).value='');
+  buildGnTags();
+  document.getElementById('gn-add').textContent = '저장';
+  document.getElementById('gn-cancel').style.display = 'none';
+}
+function delGuest(id){
+  const list = S.get('cm_notes', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_notes', list); renderGuests(); renderReq();
+  toast('게스트 노트를 삭제했습니다', ()=>{
+    const l = S.get('cm_notes', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_notes', l); renderGuests(); renderReq();
+  });
+}
+function roomNote(room){
+  if(!room || room==='—') return null;
+  return S.get('cm_notes', []).find(x=>String(x.room)===String(room)) || null;
+}
+function openGuestRoom(room){
+  switchTab('guest');
+  const q = document.getElementById('gn-q'); if(q){ q.value = room; renderGuests(); }
+}
+function renderGuests(){
+  const qel = document.getElementById('gn-q'); if(!qel) return;
+  const q = qel.value.trim().toLowerCase();
+  const list = S.get('cm_notes', []).filter(x=>
+    !q || (x.room+' '+(x.name||'')+' '+(x.note||'')+' '+(x.tags||[]).join(' ')).toLowerCase().includes(q));
+  document.getElementById('gn-list').innerHTML = list.length ? list.map(x=>`
+    <div class="card gn">
+      <div class="row" style="justify-content:space-between;">
+        <div><span class="gn-room">${esc(x.room)}호</span><h3>${esc(x.name||'게스트')}</h3></div>
+        <div>
+          <button class="btn ghost sm" onclick="editGuest('${x.id}')">수정</button>
+          <button class="btn danger sm" onclick="delGuest('${x.id}')">삭제</button>
+        </div>
+      </div>
+      ${(x.tags||[]).length?`<div style="margin-top:8px;">${x.tags.map(t=>`<span class="gtag">${esc(t)}</span>`).join('')}</div>`:''}
+      ${x.note?`<div class="tip" style="margin-top:8px;">${esc(x.note)}</div>`:''}
+    </div>`).join('') : '<div class="empty">저장된 게스트 노트가 없습니다.</div>';
+}
+
+/* ---------------- 빠른 요청 템플릿 ---------------- */
+const REQ_TPL = [
+  ['🚕 교통','공항 픽업/샌딩 택시 예약'],
+  ['🍽️ 식당예약','저녁 식당 예약 요청'],
+  ['🛏️ 객실','수건·어메니티 추가'],
+  ['🛏️ 객실','객실 정비 요청'],
+  ['📦 기타','레이트 체크아웃 요청'],
+  ['📦 기타','카드키 재발급'],
+  ['🧳 짐','짐 보관/택배 요청'],
+  ['🏝️ 관광문의','주변 관광 안내 요청'],
+];
+function renderTpl(){
+  const el = document.getElementById('r-tpl'); if(!el) return;
+  el.innerHTML = REQ_TPL.map((t,i)=>`<span class="chip" onclick="tpl(${i})">＋ ${esc(t[1])}</span>`).join('');
+}
+function tpl(i){
+  const t = REQ_TPL[i]; if(!t) return;
+  const sel = document.getElementById('r-cat');
+  if([...sel.options].some(o=>o.value===t[0])) sel.value = t[0];
+  const inp = document.getElementById('r-txt');
+  inp.value = t[1]; inp.focus();
+}
+
+/* ---------------- v3 초기화 ---------------- */
+(function v3Init(){
+  buildGnTags();
+  renderTpl();
+  renderGuests();
+  renderReq();   /* roomNote 정의 후 객실 노트 마커 반영 */
 })();
 </script>
 </body>
