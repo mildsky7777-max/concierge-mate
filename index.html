@@ -245,6 +245,16 @@ try{
   #brief.on{display:flex;}
   #brief .card{width:min(560px,94vw); margin:0;}
   #brief textarea{font-size:12.5px; min-height:240px; font-family:inherit;}
+  #brief-print{display:none;}
+  @media print{
+    body > *{ display:none !important; }
+    body{ background:#fff !important; padding:0 !important; }
+    #brief{ display:block !important; position:static !important; inset:auto !important; background:#fff !important; padding:0 !important; }
+    #brief .card{ box-shadow:none !important; border:none !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; background:#fff !important; }
+    #brief h2{ color:#000 !important; }
+    #brief #brief-sections, #brief textarea, #brief .row, #brief .meta{ display:none !important; }
+    #brief-print{ display:block !important; white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:12.5px; color:#000; margin:0; }
+  }
   /* ---------- toasts ---------- */
   #toasts{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 62px); z-index:120;
@@ -689,15 +699,23 @@ try{
 <div id="brief">
   <div class="card">
     <h2>📝 교대 브리핑 · 보고서</h2>
+    <div class="row" id="brief-sections" style="gap:14px; margin-bottom:8px; font-size:12px; color:var(--muted);">
+      <span style="font-weight:700;">포함:</span>
+      <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-req" checked onchange="refreshBrief()">요청</label>
+      <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-ho" checked onchange="refreshBrief()">인계</label>
+      <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-lost" checked onchange="refreshBrief()">분실물</label>
+    </div>
     <textarea id="brief-txt"></textarea>
+    <pre id="brief-print"></pre>
     <div class="row" style="margin-top:10px; gap:6px;">
       <button class="btn ghost sm" onclick="exportExcel()">📊 엑셀</button>
       <button class="btn ghost sm" onclick="exportPptx()">📑 PPT</button>
       <button class="btn ghost sm" onclick="copyBrief()">📋 복사</button>
       <button class="btn ghost sm" onclick="shareBriefing()">📤 공유</button>
+      <button class="btn ghost sm" onclick="printBrief()">🖨️ 인쇄</button>
       <button class="btn gold sm" style="margin-left:auto;" onclick="closeBrief()">닫기</button>
     </div>
-    <p class="meta" style="margin-top:8px;">엑셀·PPT는 현재 저장된 요청·인수인계·체크리스트를 보고서로 내보냅니다.</p>
+    <p class="meta" style="margin-top:8px;">체크박스로 포함할 섹션을 고를 수 있어요. 🖨️ 인쇄는 PDF로 저장하기에도 좋습니다.</p>
   </div>
 </div>
 
@@ -1012,39 +1030,55 @@ function renderHo(){
 }
 
 /* ----- 교대 브리핑 ----- */
-function makeBriefing(){
+function makeBriefing(opts){
+  opts = opts || {req:true, ho:true, lost:true};
   const s = getSettings(), n = new Date();
-  const reqs = S.get('cm_req', []).filter(x=>x.st<2);
-  const hos  = S.get('cm_ho', []).filter(x=>!x.ok);
   const doneToday = S.get('cm_req', []).filter(x=>x.st===2 && x.done && sameDay(x.done, Date.now())).length;
   const L = [];
   L.push(`[${s.hname} 교대 브리핑] ${n.getMonth()+1}/${n.getDate()} (${'일월화수목금토'[n.getDay()]}) ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
-  L.push('');
-  L.push(`■ 미완료 요청 (${reqs.length}건)`);
-  if(reqs.length) reqs.forEach(x=>{
-    L.push(`- [${ST_LABEL[x.st]}]${x.pri?'[긴급]':''} ${x.room}호 · ${x.cat} · ${x.txt}${x.due?` (예약 ${fmt(x.due)})`:''}`);
-  }); else L.push('- 없음');
-  L.push('');
-  L.push(`■ 미확인 인수인계 (${hos.length}건)`);
-  if(hos.length) hos.forEach(x=>{
-    L.push(`- ${x.imp?'(중요) ':''}${x.txt.replace(/\n/g,' / ')}`);
-  }); else L.push('- 없음');
-  const lost = S.get('cm_lost', []).filter(x=>x.status!=='반환완료');
-  L.push('');
-  L.push(`■ 미반환 분실물 (${lost.length}건)`);
-  if(lost.length) lost.forEach(x=>{
-    L.push(`- ${x.item}${x.place?` (발견:${x.place})`:''}${x.store?` / 보관:${x.store}`:''}`);
-  }); else L.push('- 없음');
-  L.push('');
-  L.push(`■ 오늘 완료 처리 ${doneToday}건`);
+  if(opts.req){
+    const reqs = S.get('cm_req', []).filter(x=>x.st<2);
+    L.push(''); L.push(`■ 미완료 요청 (${reqs.length}건)`);
+    if(reqs.length) reqs.forEach(x=>{
+      L.push(`- [${ST_LABEL[x.st]}]${x.pri?'[긴급]':''} ${x.room}호 · ${x.cat} · ${x.txt}${x.due?` (예약 ${fmt(x.due)})`:''}`);
+    }); else L.push('- 없음');
+  }
+  if(opts.ho){
+    const hos = S.get('cm_ho', []).filter(x=>!x.ok);
+    L.push(''); L.push(`■ 미확인 인수인계 (${hos.length}건)`);
+    if(hos.length) hos.forEach(x=>{
+      L.push(`- ${x.imp?'(중요) ':''}${x.txt.replace(/\n/g,' / ')}`);
+    }); else L.push('- 없음');
+  }
+  if(opts.lost){
+    const lost = S.get('cm_lost', []).filter(x=>x.status!=='반환완료');
+    L.push(''); L.push(`■ 미반환 분실물 (${lost.length}건)`);
+    if(lost.length) lost.forEach(x=>{
+      L.push(`- ${x.item}${x.place?` (발견:${x.place})`:''}${x.store?` / 보관:${x.store}`:''}`);
+    }); else L.push('- 없음');
+  }
+  L.push(''); L.push(`■ 오늘 완료 처리 ${doneToday}건`);
   return L.join('\n');
 }
+function briefOpts(){
+  const g = id => { const el = document.getElementById(id); return el ? el.checked : true; };
+  return { req:g('bf-req'), ho:g('bf-ho'), lost:g('bf-lost') };
+}
+function refreshBrief(){
+  const txt = makeBriefing(briefOpts());
+  document.getElementById('brief-txt').value = txt;
+  const p = document.getElementById('brief-print'); if(p) p.textContent = txt;
+}
 function openBrief(){
-  document.getElementById('brief-txt').value = makeBriefing();
+  refreshBrief();
   document.getElementById('brief').classList.add('on');
 }
 function closeBrief(){ document.getElementById('brief').classList.remove('on'); }
 function copyBrief(){ copyText(document.getElementById('brief-txt').value); }
+function printBrief(){
+  const p = document.getElementById('brief-print'); if(p) p.textContent = document.getElementById('brief-txt').value;
+  window.print();
+}
 
 /* ================= 가이드 ================= */
 const G_CATS = ['전체','⭐ 즐겨찾기','🍽️ 맛집','☕ 카페','🏝️ 관광','🎢 액티비티','🛍️ 쇼핑','🏥 응급/편의'];
