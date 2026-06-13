@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1d2a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="컨시어지">
+<title>더본호텔 컨시어지 메이트</title>
+<script>
+/* 다크모드 깜빡임 방지: 본문 렌더 전에 테마 적용 */
+try{
+  var _s = JSON.parse(localStorage.getItem('cm_settings')) || {};
+  var _m = _s.theme || 'auto';
+  var _h = new Date().getHours();
+  if(_m === 'dark' || (_m === 'auto' && (_h >= 19 || _h < 6)))
+    document.documentElement.setAttribute('data-theme','dark');
+}catch(e){}
+</script>
+<style>
+  :root{
+    color-scheme:light;
+    --navy:#1d2a44; --navy-soft:#2b3a5c; --gold:#c2a36b; --gold-soft:#e8dcc3;
+    --bg:#f6f3ec; --card:#ffffff; --ink:#23293a; --muted:#8a8f9c; --line:#e7e2d6;
+    --wait:#e98c3c; --doing:#3a7bd5; --done:#56a06b; --danger:#c75050;
+    --wait-bg:#fdeedd; --doing-bg:#e3edfb; --done-bg:#e4f1e7; --danger-bg:#f4e4e4;
+    --soft:#eee9dd; --tip:#faf7f0; --badge:#eef1f7; --room-ink:#6b5722;
+    --hd:#1d2a44; --hd-ink:#ffffff; --hd-sub:#bfc8da;
+    --radius:14px;
+  }
+  html[data-theme="dark"]{
+    color-scheme:dark;
+    --wait:#f0a05a; --doing:#6b9fe8; --done:#6cbf85; --danger:#e07070;
+    --navy:#d8e0f0; --navy-soft:#2b3a5c; --gold:#d4b377; --gold-soft:#3b3322;
+    --bg:#11151e; --card:#1b2130; --ink:#e8eaf0; --muted:#828a9c; --line:#2a3145;
+    --wait-bg:#3a2c1a; --doing-bg:#1c2c46; --done-bg:#1d3326; --danger-bg:#3b2226;
+    --soft:#262d3e; --tip:#222837; --badge:#242b3c; --room-ink:#dcc491;
+    --hd:#0d1119; --hd-ink:#e8eaf0; --hd-sub:#7d8596;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:96px;
+    transition:background .25s;
+  }
+  /* ---------- header ---------- */
+  header{
+    background:var(--hd); color:var(--hd-ink); padding:calc(16px + env(safe-area-inset-top)) 20px 13px;
+    position:sticky; top:0; z-index:40; box-shadow:0 2px 10px rgba(0,0,0,.18);
+  }
+  .h-row{display:flex; justify-content:space-between; align-items:center; gap:10px; max-width:860px; margin:0 auto;}
+  .brand b{font-size:16px; letter-spacing:.5px;}
+  .brand small{display:block; color:var(--gold); font-size:10px; letter-spacing:2px; margin-top:2px;}
+  .h-right{display:flex; align-items:center; gap:10px;}
+  .tbtn{
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.08); color:var(--hd-ink);
+    border-radius:10px; font-size:15px; padding:6px 9px; cursor:pointer;
+  }
+  .clock{text-align:right; font-variant-numeric:tabular-nums;}
+  .clock .time{font-size:19px; font-weight:700;}
+  .clock .date{font-size:11px; color:var(--hd-sub);}
+  /* ---------- tabs ---------- */
+  nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:50;
+    background:var(--card); border-top:1px solid var(--line);
+    display:flex; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{
+    flex:1; border:none; background:none; padding:9px 0 11px; cursor:pointer;
+    color:var(--muted); font-size:10.5px; font-weight:600;
+  }
+  nav button .ico{display:block; font-size:19px; margin-bottom:3px;}
+  nav button.on{color:var(--gold);}
+  nav button.sec{display:none;}
+  /* ---------- layout ---------- */
+  main{max-width:860px; margin:0 auto; padding:16px;}
+  section{display:none;}
+  section.on{display:block; animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1;}}
+  h2{font-size:15px; margin:4px 0 12px; color:var(--navy);}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:10px;
+  }
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  input,select,textarea{
+    font:inherit; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    background:var(--card); color:var(--ink); width:100%;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  textarea{resize:vertical; min-height:64px;}
+  input[type=checkbox]{width:auto;}
+  .btn{
+    font:inherit; font-weight:700; border:none; border-radius:10px; padding:10px 16px;
+    background:var(--hd); color:#fff; cursor:pointer; white-space:nowrap;
+  }
+  html[data-theme="dark"] .btn:not(.gold):not(.ghost):not(.danger){background:#33405e;}
+  .btn.gold{background:var(--gold); color:#2c2410;}
+  .btn.ghost{background:var(--soft); color:var(--navy);}
+  .btn.sm{padding:6px 10px; font-size:12px; border-radius:8px;}
+  .btn.danger{background:var(--danger-bg); color:var(--danger);}
+  .btn.wide{width:100%;}
+  .btn.rec{background:var(--danger); color:#fff; animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.5;}}
+  #authBtn.in{background:var(--gold); color:#2c2410; border-color:var(--gold);}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+  .chip{
+    border:1px solid var(--line); background:var(--card); border-radius:999px;
+    padding:6px 13px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer;
+  }
+  .chip.on{background:var(--gold); border-color:var(--gold); color:#2c2410;}
+  .empty{color:var(--muted); text-align:center; padding:30px 0; font-size:13px;}
+  .meta{font-size:11px; color:var(--muted);}
+  .badge{display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:3px 8px;}
+  .grp{font-size:12px; color:var(--muted); margin:14px 4px 6px; font-weight:700;}
+  .lbl{font-size:11px; color:var(--muted); font-weight:700; margin:10px 0 4px;}
+  /* ---------- home ---------- */
+  .greet{font-size:17px; font-weight:800; color:var(--navy); margin:2px 0 12px;}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;}
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:10px 4px; text-align:center; cursor:pointer;
+  }
+  .stat b{display:block; font-size:21px; margin-bottom:2px;}
+  .stat span{font-size:10.5px; color:var(--muted); font-weight:600;}
+  .stat.c0 b{color:var(--wait);} .stat.c1 b{color:var(--doing);}
+  .stat.c2 b{color:var(--done);} .stat.c3 b{color:var(--danger);}
+  .qa{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;}
+  .qa button{
+    border:1px solid var(--line); background:var(--card); border-radius:12px;
+    padding:11px 2px; font:inherit; font-size:11px; font-weight:700; color:var(--ink); cursor:pointer;
+  }
+  .qa button span{display:block; font-size:19px; margin-bottom:3px;}
+  .hm-due-item{display:flex; gap:10px; align-items:center; padding:8px 2px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .hm-due-item:last-child{border-bottom:none;}
+  .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; font-size:13px;}
+  .info-grid b{color:var(--gold); font-size:11px; display:block;}
+  /* ---------- requests ---------- */
+  .req{display:flex; gap:10px; align-items:flex-start;}
+  .room{
+    min-width:54px; text-align:center; background:var(--gold-soft); color:var(--room-ink);
+    border-radius:10px; padding:8px 4px; font-weight:800; font-size:15px;
+  }
+  .room small{display:block; font-size:9px; font-weight:600; letter-spacing:1px;}
+  .req-body{flex:1; min-width:0;}
+  .req-body p{font-size:14px; margin:3px 0 6px; word-break:break-all;}
+  .st{cursor:pointer; user-select:none;}
+  .st.s0{background:var(--wait-bg); color:var(--wait);}
+  .st.s1{background:var(--doing-bg); color:var(--doing);}
+  .st.s2{background:var(--done-bg); color:var(--done);}
+  .pri-hi{color:var(--danger); font-weight:700; font-size:11px;}
+  .due-soon{color:var(--wait); font-weight:700;}
+  .due-over{color:var(--danger); font-weight:700;}
+  .r-actions{display:flex; gap:6px; justify-content:flex-end; margin-top:6px;}
+  /* ---------- handover ---------- */
+  .ho{border-left:4px solid var(--gold);}
+  .ho.imp{border-left-color:var(--danger);}
+  .ho.ok{opacity:.55; border-left-color:var(--done);}
+  .ho p{font-size:14px; margin:6px 0; white-space:pre-wrap; word-break:break-all;}
+  /* ---------- guide / phrases ---------- */
+  .place h3{font-size:15px; margin-bottom:2px; display:inline;}
+  .place .tip{font-size:13px; color:var(--ink); opacity:.85; margin-top:6px; background:var(--tip); border-radius:8px; padding:8px 10px;}
+  .star{border:none; background:none; cursor:pointer; font-size:17px; padding:2px 4px; filter:grayscale(1); opacity:.45;}
+  .star.on{filter:none; opacity:1;}
+  .ph h3{font-size:14px; margin-bottom:8px;}
+  .lang{
+    display:flex; gap:8px; align-items:baseline; padding:7px 10px; border-radius:8px;
+    cursor:pointer; border:1px dashed transparent;
+  }
+  .lang:hover{background:var(--tip); border-color:var(--gold);}
+  .lang b{font-size:10px; color:var(--gold); min-width:22px; letter-spacing:1px;}
+  .lang span{font-size:14px; flex:1;}
+  .spk{border:none; background:none; cursor:pointer; font-size:14px; padding:0 2px; opacity:.7;}
+  .hint{font-size:11px; color:var(--muted); margin-bottom:10px;}
+  /* ---------- tools ---------- */
+  .fx-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .fx-row label{font-size:12px; color:var(--muted); min-width:64px; font-weight:700;}
+  .gcard{cursor:pointer;}
+  .gcard h3{font-size:14px;}
+  .gcard .addr{font-size:13px; color:var(--ink); opacity:.85; margin-top:4px;}
+  /* ---------- checklist ---------- */
+  .prog{height:8px; background:var(--soft); border-radius:4px; overflow:hidden; flex:1;}
+  .prog i{display:block; height:100%; background:var(--gold); border-radius:4px; transition:width .25s;}
+  .ck-item{display:flex; gap:8px; align-items:center; padding:7px 2px; border-bottom:1px solid var(--line);}
+  .ck-item:last-child{border-bottom:none;}
+  .ck-item label{flex:1; font-size:14px; cursor:pointer;}
+  .ck-item.done label{text-decoration:line-through; opacity:.5;}
+  .ck-x{border:none; background:none; color:var(--muted); cursor:pointer; font-size:13px;}
+  /* ---------- memo ---------- */
+  .memo h3{font-size:14px; margin-bottom:4px;}
+  .memo p{font-size:13px; white-space:pre-wrap; color:var(--ink); opacity:.85; word-break:break-all;}
+  .memo.pinned{border-color:var(--gold);}
+  /* ---------- overlays ---------- */
+  #big{
+    position:fixed; inset:0; z-index:100; background:#1d2a44; color:#fff;
+    display:none; flex-direction:column; justify-content:center; align-items:center;
+    padding:30px; text-align:center; cursor:pointer;
+  }
+  #big.on{display:flex;}
+  #big .txt{font-size:clamp(28px,6vw,52px); font-weight:800; line-height:1.35; word-break:keep-all;}
+  #big .sub{margin-top:18px; color:#c2a36b; font-size:15px;}
+  #big .close{position:absolute; top:calc(18px + env(safe-area-inset-top)); right:22px; font-size:13px; color:#9fb0cc;}
+  #big-spk{
+    margin-top:26px; font-size:16px; border:1px solid #c2a36b; background:none; color:#c2a36b;
+    border-radius:999px; padding:9px 22px; cursor:pointer; font-weight:700;
+  }
+  #sheet-bk{position:fixed; inset:0; z-index:88; background:rgba(0,0,0,.45); display:none;}
+  #sheet-bk.on{display:block;}
+  #sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:90; background:var(--card);
+    border-radius:18px 18px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom));
+    transform:translateY(105%); transition:transform .22s ease;
+  }
+  #sheet.on{transform:none;}
+  #sheet .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  #sheet .grid button{
+    border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:16px 4px;
+    font:inherit; font-weight:700; font-size:13px; color:var(--ink); cursor:pointer;
+  }
+  #sheet .grid button span{display:block; font-size:22px; margin-bottom:5px;}
+  #brief{
+    position:fixed; inset:0; z-index:95; background:rgba(0,0,0,.5);
+    display:none; justify-content:center; align-items:center; padding:16px;
+  }
+  #brief.on{display:flex;}
+  #brief .card{width:min(560px,94vw); margin:0;}
+  #brief textarea{font-size:12.5px; min-height:240px; font-family:inherit;}
+  /* ---------- toasts ---------- */
+  #toasts{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:86px; z-index:120;
+    display:flex; flex-direction:column; gap:8px; align-items:center; width:max-content; max-width:92vw;
+  }
+  .toast{
+    background:#222c44; color:#fff; border-radius:12px; padding:11px 16px; font-size:13px;
+    box-shadow:0 6px 18px rgba(0,0,0,.3); display:flex; gap:12px; align-items:center;
+    animation:fade .2s ease;
+  }
+  .toast button{
+    border:none; background:none; color:#e9c97f; font:inherit; font-weight:800; cursor:pointer; font-size:13px;
+  }
+  .tools{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  /* ---------- desktop ---------- */
+  @media(min-width:700px){
+    nav{position:static; border:none; background:none; max-width:860px; margin:6px auto 0; padding:0 16px; flex-wrap:wrap; gap:2px;}
+    nav button{flex:none; padding:8px 13px; border-radius:10px; font-size:13px; display:flex; gap:6px; align-items:center;}
+    nav button .ico{display:inline; font-size:16px; margin:0;}
+    nav button.on{background:var(--card); box-shadow:0 1px 4px rgba(0,0,0,.08); color:var(--ink);}
+    nav button.sec{display:flex;}
+    #moreBtn{display:none;}
+    body{padding-bottom:30px;}
+    #toasts{bottom:24px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-row">
+    <div class="brand"><b>더본호텔 컨시어지 메이트</b><small>CONCIERGE MATE · JEJU</small></div>
+    <div class="h-right">
+      <button class="tbtn" id="authBtn" onclick="authClick()" title="로그인">👤</button>
+      <button class="tbtn" id="themeBtn" onclick="cycleTheme()" title="테마 전환">🌗</button>
+      <div class="clock"><div class="time" id="clk">--:--</div><div class="date" id="dt"></div></div>
+    </div>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-t="hm" class="on"><span class="ico">🏠</span>홈</button>
+  <button data-t="req"><span class="ico">📋</span>요청</button>
+  <button data-t="ho"><span class="ico">🔄</span>인계</button>
+  <button data-t="gd"><span class="ico">🗺️</span>가이드</button>
+  <button data-t="ph"><span class="ico">💬</span>회화</button>
+  <button data-t="tool" class="sec"><span class="ico">🧰</span>도구</button>
+  <button data-t="ck" class="sec"><span class="ico">✅</span>체크</button>
+  <button data-t="mm" class="sec"><span class="ico">📌</span>메모</button>
+  <button data-t="set" class="sec"><span class="ico">⚙️</span>설정</button>
+  <button id="moreBtn" onclick="openSheet()"><span class="ico">⋯</span>더보기</button>
+</nav>
+
+<main>
+
+<!-- ============ 홈 ============ -->
+<section id="sec-hm" class="on">
+  <div class="greet" id="hm-greet"></div>
+  <div class="stats" id="hm-stats"></div>
+  <div class="qa">
+    <button onclick="switchTab('req')"><span>📋</span>요청 접수</button>
+    <button onclick="switchTab('ho')"><span>🔄</span>인수인계</button>
+    <button onclick="openBrief()"><span>📝</span>교대 브리핑</button>
+    <button onclick="showCard('hotel')"><span>🚕</span>택시 카드</button>
+  </div>
+  <div class="card" id="hm-due-card">
+    <h2>⏰ 다가오는 예약 요청</h2>
+    <div id="hm-due"></div>
+  </div>
+  <div class="card">
+    <h2>🏨 호텔 안내 요약</h2>
+    <div class="info-grid" id="hm-info"></div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <h2 style="margin:0;">✅ 오늘 체크리스트</h2>
+      <div class="prog"><i id="hm-ck-bar" style="width:0%"></i></div>
+      <span class="meta" id="hm-ck-txt"></span>
+    </div>
+    <button class="btn ghost sm" style="margin-top:10px;" onclick="switchTab('ck')">체크리스트 열기</button>
+  </div>
+</section>
+
+<!-- ============ 요청 보드 ============ -->
+<section id="sec-req">
+  <div class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <input id="r-room" placeholder="객실" inputmode="numeric" style="width:80px; flex:none;">
+      <select id="r-cat" style="width:118px; flex:none;">
+        <option>🚕 교통</option><option>🧳 짐</option><option>🍽️ 식당예약</option>
+        <option>🏝️ 관광문의</option><option>🛏️ 객실</option><option>📦 기타</option>
+      </select>
+      <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="r-pri">긴급
+      </label>
+    </div>
+    <div class="row" style="margin-bottom:8px;">
+      <label class="meta" style="flex:none;">⏰ 예약시간(선택)</label>
+      <input type="datetime-local" id="r-due" style="flex:1;">
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="r-mic" onclick="dictate('r-txt', this)" title="음성 입력" style="flex:none;">🎤</button>
+      <input id="r-txt" placeholder="요청 내용 (예: 14시 공항 택시)" style="flex:1;">
+      <button class="btn ghost" id="r-cancel" style="display:none;" onclick="cancelReqEdit()">취소</button>
+      <button class="btn gold" id="r-add" onclick="saveReq()">접수</button>
+    </div>
+  </div>
+  <div class="chips" id="r-filter">
+    <span class="chip on" data-f="all">전체</span>
+    <span class="chip" data-f="0">대기</span>
+    <span class="chip" data-f="1">진행중</span>
+    <span class="chip" data-f="2">완료</span>
+    <span class="chip" style="margin-left:auto;" onclick="clearDone()">완료 비우기</span>
+  </div>
+  <div id="r-list"></div>
+</section>
+
+<!-- ============ 인수인계 ============ -->
+<section id="sec-ho">
+  <div class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <select id="h-shift" style="width:110px; flex:none;">
+        <option>☀️ 주간</option><option>🌙 야간</option>
+      </select>
+      <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="h-imp">중요
+      </label>
+      <button class="btn ghost sm" style="margin-left:auto;" onclick="openBrief()">📝 교대 브리핑 생성</button>
+    </div>
+    <div class="row">
+      <textarea id="h-txt" placeholder="다음 근무자에게 전달할 내용&#10;(예: 1203호 12시 레이트 체크아웃 승인됨)"></textarea>
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-top:8px;">
+      <button class="btn ghost" onclick="dictate('h-txt', this)" title="음성 입력" style="margin-right:auto;">🎤</button>
+      <button class="btn ghost" id="h-cancel" style="display:none;" onclick="cancelHoEdit()">취소</button>
+      <button class="btn gold" id="h-add" onclick="saveHo()">기록</button>
+    </div>
+  </div>
+  <div id="h-list"></div>
+</section>
+
+<!-- ============ 가이드 ============ -->
+<section id="sec-gd">
+  <div class="card">
+    <input id="g-q" placeholder="🔍 장소 검색 (이름·설명)" oninput="renderGd()">
+  </div>
+  <div class="chips" id="g-filter"></div>
+  <div id="g-list"></div>
+  <div class="card" id="g-form" style="display:none;">
+    <h2 id="g-form-title">장소 추가</h2>
+    <div class="row" style="margin-bottom:8px;">
+      <input id="g-name" placeholder="장소 이름" style="flex:1;">
+      <select id="g-cat" style="width:118px; flex:none;">
+        <option>🍽️ 맛집</option><option>☕ 카페</option><option>🏝️ 관광</option>
+        <option>🎢 액티비티</option><option>🛍️ 쇼핑</option><option>🏥 응급/편의</option>
+      </select>
+    </div>
+    <div class="row" style="margin-bottom:8px;">
+      <input id="g-dist" placeholder="거리/시간 (예: 차 10분)" style="flex:1;">
+      <input id="g-tel" placeholder="전화번호 (선택)" style="flex:1;">
+    </div>
+    <textarea id="g-desc" placeholder="설명·추천 팁 (예: 갈치조림 유명, 웨이팅 있음)" style="margin-bottom:8px;"></textarea>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn ghost" onclick="closeGdForm()">취소</button>
+      <button class="btn gold" onclick="saveGd()">저장</button>
+    </div>
+  </div>
+  <button class="btn wide" onclick="openGdForm()">＋ 장소 추가</button>
+</section>
+
+<!-- ============ 회화 ============ -->
+<section id="sec-ph">
+  <p class="hint">💡 문장을 탭하면 큰 글씨로 표시되고, 🔊 버튼은 발음을 들려줍니다.</p>
+  <div class="card">
+    <input id="p-q" placeholder="🔍 문구 검색 (한국어·영어)" oninput="renderPh()">
+  </div>
+  <div class="chips" id="p-filter"></div>
+  <div id="p-list"></div>
+  <div class="card" id="p-form" style="display:none;">
+    <h2 id="p-form-title">문구 추가</h2>
+    <select id="p-cat" style="margin-bottom:8px;"></select>
+    <input id="p-ko" placeholder="한국어" style="margin-bottom:8px;">
+    <input id="p-en" placeholder="English" style="margin-bottom:8px;">
+    <input id="p-ja" placeholder="日本語 (선택)" style="margin-bottom:8px;">
+    <input id="p-zh" placeholder="中文 (선택)" style="margin-bottom:8px;">
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn ghost" onclick="closePhForm()">취소</button>
+      <button class="btn gold" onclick="savePh()">저장</button>
+    </div>
+  </div>
+  <button class="btn wide" onclick="openPhForm()">＋ 문구 추가</button>
+</section>
+
+<!-- ============ 도구 ============ -->
+<section id="sec-tool">
+  <div class="card">
+    <h2>💱 환율 계산기</h2>
+    <div class="fx-row">
+      <label>통화</label>
+      <select id="f-cur" style="flex:1;" onchange="fxCur()">
+        <option value="USD">🇺🇸 USD 달러</option>
+        <option value="JPY">🇯🇵 JPY 엔 (100엔 기준)</option>
+        <option value="CNY">🇨🇳 CNY 위안</option>
+        <option value="EUR">🇪🇺 EUR 유로</option>
+      </select>
+    </div>
+    <div class="fx-row">
+      <label id="f-rate-label">1 USD =</label>
+      <input type="number" id="f-rate" inputmode="decimal" oninput="fxRate()" style="flex:1;">
+      <span class="meta" style="flex:none;">원</span>
+    </div>
+    <div class="fx-row">
+      <label>외화 금액</label>
+      <input type="number" id="f-amt" inputmode="decimal" oninput="fxFromF()" style="flex:1;" placeholder="0">
+    </div>
+    <div class="fx-row">
+      <label>원화 금액</label>
+      <input type="number" id="k-amt" inputmode="decimal" oninput="fxFromK()" style="flex:1;" placeholder="0">
+    </div>
+    <p class="meta">⚠️ 환율은 예시값입니다. 당일 환율을 확인해 직접 수정하세요. 수정한 값은 저장됩니다.</p>
+  </div>
+  <div class="card">
+    <h2>🚕 게스트 카드 <span class="meta">— 탭하면 기사님께 보여주는 큰 화면</span></h2>
+    <div id="c-list"></div>
+    <div class="lbl">새 목적지 카드 추가</div>
+    <input id="c-title" placeholder="제목 (예: 성산일출봉)" style="margin-bottom:8px;">
+    <input id="c-addr" placeholder="주소 또는 장소명 (기사님께 보여줄 내용)" style="margin-bottom:8px;">
+    <input id="c-note" placeholder="메모 (선택)" style="margin-bottom:8px;">
+    <button class="btn gold sm" onclick="addCard()">카드 추가</button>
+  </div>
+</section>
+
+<!-- ============ 체크리스트 ============ -->
+<section id="sec-ck">
+  <p class="hint">체크 상태는 매일 자정에 자동으로 초기화됩니다.</p>
+  <div class="card">
+    <div class="row" style="margin-bottom:6px;">
+      <h2 style="margin:0;">☀️ 주간 근무</h2>
+      <div class="prog"><i id="ck-day-bar" style="width:0%"></i></div>
+    </div>
+    <div id="ck-day-list"></div>
+    <div class="row" style="margin-top:8px;">
+      <input id="ck-day-new" placeholder="항목 추가" style="flex:1;">
+      <button class="btn ghost sm" onclick="addCk('day')">추가</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row" style="margin-bottom:6px;">
+      <h2 style="margin:0;">🌙 야간 근무</h2>
+      <div class="prog"><i id="ck-night-bar" style="width:0%"></i></div>
+    </div>
+    <div id="ck-night-list"></div>
+    <div class="row" style="margin-top:8px;">
+      <input id="ck-night-new" placeholder="항목 추가" style="flex:1;">
+      <button class="btn ghost sm" onclick="addCk('night')">추가</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 메모 ============ -->
+<section id="sec-mm">
+  <div class="card">
+    <input id="m-q" placeholder="🔍 메모 검색" oninput="renderMm()" style="margin-bottom:8px;">
+    <input id="m-title" placeholder="제목 (예: 조식 운영시간)" style="margin-bottom:8px;">
+    <textarea id="m-txt" placeholder="내용"></textarea>
+    <div class="row" style="justify-content:flex-end; margin-top:8px;">
+      <button class="btn ghost" onclick="dictate('m-txt', this)" title="음성 입력" style="margin-right:auto;">🎤</button>
+      <button class="btn ghost" id="m-cancel" style="display:none;" onclick="cancelMmEdit()">취소</button>
+      <button class="btn gold" id="m-add" onclick="saveMemo()">저장</button>
+    </div>
+  </div>
+  <div id="m-list"></div>
+</section>
+
+<!-- ============ 설정 ============ -->
+<section id="sec-set">
+  <div class="card">
+    <h2>🎨 화면</h2>
+    <div class="row">
+      <label class="meta" style="flex:none;">테마</label>
+      <select id="s-theme" onchange="saveSettings()" style="flex:1;">
+        <option value="auto">자동 (19시~6시 야간 모드)</option>
+        <option value="light">라이트</option>
+        <option value="dark">다크</option>
+      </select>
+    </div>
+    <button class="btn ghost sm" style="margin-top:10px;" onclick="askNotif()">🔔 브라우저 알림 켜기 (예약 요청 알림)</button>
+  </div>
+  <div class="card">
+    <h2>🏨 호텔 정보 <span class="meta">— 홈 요약·택시 카드·브리핑에 사용됩니다</span></h2>
+    <div class="lbl">호텔 이름 (한글 / 영문)</div>
+    <div class="row" style="margin-bottom:4px;">
+      <input id="s-hname" placeholder="더본호텔" onchange="saveSettings()" style="flex:1;">
+      <input id="s-hnameEn" placeholder="TheBorn Hotel Jeju" onchange="saveSettings()" style="flex:1;">
+    </div>
+    <div class="lbl">주소 (한글 — 택시 기사용)</div>
+    <input id="s-addr" placeholder="제주 서귀포시 ..." onchange="saveSettings()">
+    <div class="lbl">주소 (영문 — 게스트용)</div>
+    <input id="s-addrEn" placeholder="..., Seogwipo-si, Jeju" onchange="saveSettings()">
+    <div class="lbl">대표 전화</div>
+    <input id="s-tel" placeholder="064-..." onchange="saveSettings()">
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;"><div class="lbl">체크인</div><input id="s-ci" placeholder="15:00" onchange="saveSettings()"></div>
+      <div style="flex:1;"><div class="lbl">체크아웃</div><input id="s-co" placeholder="11:00" onchange="saveSettings()"></div>
+    </div>
+    <div class="lbl">조식 안내</div>
+    <input id="s-bf" placeholder="1층 레스토랑 07:00~10:00" onchange="saveSettings()">
+    <div class="lbl">와이파이 안내</div>
+    <input id="s-wifi" placeholder="키 카드 홀더 참조" onchange="saveSettings()">
+  </div>
+  <div class="card">
+    <h2>☁️ 클라우드 로그인 (구글)</h2>
+    <div id="cloud-status" class="meta" style="margin-bottom:10px;">상태 확인 중…</div>
+    <div id="cloud-actions" class="tools" style="margin-top:0;"></div>
+    <details style="margin-top:12px;">
+      <summary style="font-size:12px; color:var(--gold); font-weight:700; cursor:pointer;">⚙️ Firebase 연동 설정 방법 (최초 1회)</summary>
+      <ol style="font-size:12.5px; color:var(--ink); opacity:.9; line-height:1.7; margin:10px 0 0 18px;">
+        <li><a href="https://console.firebase.google.com" target="_blank" rel="noopener" style="color:var(--doing);">Firebase 콘솔</a>에서 프로젝트 생성 (구글 계정으로 로그인).</li>
+        <li>좌측 <b>빌드 → Authentication → 시작하기 → Google</b> 사용 설정.</li>
+        <li><b>빌드 → Firestore Database → 데이터베이스 만들기</b> (프로덕션/테스트 아무거나).</li>
+        <li>프로젝트 설정(⚙️) → <b>내 앱 → 웹(&lt;/&gt;)</b> 추가 → <b>firebaseConfig</b> 값을 복사.</li>
+        <li>아래 칸에 붙여넣고 저장 → 페이지 새로고침.</li>
+        <li>Authentication → Settings → <b>승인된 도메인</b>에 <code id="fb-domain">이 사이트 주소</code> 추가.</li>
+      </ol>
+      <textarea id="s-fbconfig" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}' style="margin-top:10px; min-height:90px; font-size:11px; font-family:monospace;"></textarea>
+      <div class="row" style="justify-content:flex-end; margin-top:8px;">
+        <button class="btn gold sm" onclick="saveFbConfig()">설정 저장 & 새로고침</button>
+      </div>
+    </details>
+  </div>
+  <div class="card">
+    <h2>💾 데이터</h2>
+    <div class="tools" style="margin-top:0;">
+      <button class="btn ghost sm" onclick="openBrief()">📊 보고서 내보내기</button>
+      <button class="btn ghost sm" onclick="exportData()">⬇️ 데이터 백업</button>
+      <button class="btn ghost sm" onclick="document.getElementById('imp-file').click()">⬆️ 백업 불러오기</button>
+      <input type="file" id="imp-file" accept=".json" style="display:none;" onchange="importData(this)">
+      <button class="btn danger sm" onclick="wipeAll()">전체 초기화</button>
+    </div>
+    <p class="meta" style="margin-top:10px;">로그인하면 여러 기기에 자동 동기화됩니다. 로그인 전에는 이 기기에만 저장되니 백업 파일로 옮기세요.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- 큰 글씨 오버레이 -->
+<div id="big" onclick="closeBig()">
+  <div class="close">탭하면 닫힙니다 ✕</div>
+  <div class="txt" id="big-txt"></div>
+  <div class="sub" id="big-sub"></div>
+  <button id="big-spk" onclick="event.stopPropagation(); speakCur();">🔊 발음 듣기</button>
+</div>
+
+<!-- 더보기 시트 -->
+<div id="sheet-bk" onclick="closeSheet()"></div>
+<div id="sheet">
+  <div class="grid">
+    <button onclick="switchTab('tool'); closeSheet();"><span>🧰</span>도구 (환율·택시카드)</button>
+    <button onclick="switchTab('ck'); closeSheet();"><span>✅</span>체크리스트</button>
+    <button onclick="switchTab('mm'); closeSheet();"><span>📌</span>메모</button>
+    <button onclick="switchTab('set'); closeSheet();"><span>⚙️</span>설정</button>
+  </div>
+</div>
+
+<!-- 교대 브리핑 모달 -->
+<div id="brief">
+  <div class="card">
+    <h2>📝 교대 브리핑 · 보고서</h2>
+    <textarea id="brief-txt"></textarea>
+    <div class="row" style="margin-top:10px; gap:6px;">
+      <button class="btn ghost sm" onclick="exportExcel()">📊 엑셀</button>
+      <button class="btn ghost sm" onclick="exportPptx()">📑 PPT</button>
+      <button class="btn ghost sm" onclick="copyBrief()">📋 복사</button>
+      <button class="btn gold sm" style="margin-left:auto;" onclick="closeBrief()">닫기</button>
+    </div>
+    <p class="meta" style="margin-top:8px;">엑셀·PPT는 현재 저장된 요청·인수인계·체크리스트를 보고서로 내보냅니다.</p>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ---------------- 저장소 & 헬퍼 ---------------- */
+const S = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_settings','cm_fx','cm_seed2','cm_seed3'];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const fmt = ts => { const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sameDay = (a,b) => { const x=new Date(a), y=new Date(b); return x.getFullYear()===y.getFullYear() && x.getMonth()===y.getMonth() && x.getDate()===y.getDate(); };
+const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+function toLocalInput(ts){ const d=new Date(ts), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+const DEF_SET = {theme:'auto', hname:'더본호텔', hnameEn:'TheBorn Hotel Jeju', addr:'', addrEn:'', tel:'', ci:'15:00', co:'11:00', bf:'', wifi:''};
+const getSettings = () => ({...DEF_SET, ...S.get('cm_settings', {})});
+
+/* ---------------- 토스트 & 실행취소 ---------------- */
+const undoStore = {};
+function toast(msg, undoFn){
+  const id = uid(), box = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span>${esc(msg)}</span>` + (undoFn ? `<button onclick="doUndo('${id}', this)">실행취소</button>` : '');
+  if(undoFn) undoStore[id] = undoFn;
+  box.appendChild(el);
+  setTimeout(()=>{ el.remove(); delete undoStore[id]; }, 5000);
+}
+function doUndo(id, btn){
+  const f = undoStore[id];
+  if(f){ f(); delete undoStore[id]; btn.closest('.toast').remove(); }
+}
+function beep(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880; g.gain.value = .08;
+    o.start(); o.stop(ctx.currentTime + .18);
+  }catch(e){}
+}
+function copyText(t){
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('복사되었습니다 📋'); }catch(e){ toast('복사에 실패했습니다'); }
+    ta.remove();
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(()=>toast('복사되었습니다 📋')).catch(fallback);
+  else fallback();
+}
+function speak(text, lang){
+  if(!('speechSynthesis' in window)){ toast('이 브라우저는 음성 재생을 지원하지 않습니다'); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = {ko:'ko-KR', en:'en-US', ja:'ja-JP', zh:'zh-CN'}[lang] || 'en-US';
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+/* ---------------- 시계 & 테마 ---------------- */
+function tick(){
+  const n = new Date();
+  document.getElementById('clk').textContent =
+    `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('dt').textContent =
+    `${n.getFullYear()}.${n.getMonth()+1}.${n.getDate()} (${'일월화수목금토'[n.getDay()]})`;
+}
+function applyTheme(){
+  const mode = getSettings().theme || 'auto';
+  const h = new Date().getHours();
+  const dark = mode==='dark' || (mode==='auto' && (h>=19 || h<6));
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = {auto:'🌗', light:'☀️', dark:'🌙'}[mode];
+}
+function cycleTheme(){
+  const s = getSettings();
+  s.theme = {auto:'light', light:'dark', dark:'auto'}[s.theme || 'auto'];
+  S.set('cm_settings', s); applyTheme(); renderSet();
+  toast({auto:'테마: 자동 (시간대별 전환)', light:'테마: 라이트', dark:'테마: 다크'}[s.theme]);
+}
+
+/* ---------------- 탭 & 시트 ---------------- */
+const SEC_TABS = ['tool','ck','mm','set'];
+function switchTab(t){
+  document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+  document.getElementById('moreBtn').classList.toggle('on', SEC_TABS.includes(t));
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on', s.id==='sec-'+t));
+  if(t==='hm') renderHome();
+  window.scrollTo({top:0});
+}
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-t]'); if(b) switchTab(b.dataset.t);
+});
+function openSheet(){ document.getElementById('sheet').classList.add('on'); document.getElementById('sheet-bk').classList.add('on'); }
+function closeSheet(){ document.getElementById('sheet').classList.remove('on'); document.getElementById('sheet-bk').classList.remove('on'); }
+
+/* ================= 요청 보드 ================= */
+let reqFilter = 'all', reqEditId = null;
+const ST_LABEL = ['대기','진행중','완료'];
+
+function dueLabel(due){
+  const m = Math.round((due - Date.now())/60000);
+  if(m < 0)    return `<span class="due-over">⏰ ${fmt(due)} · ${-m >= 60 ? Math.floor(-m/60)+'시간' : -m+'분'} 지남</span>`;
+  if(m === 0)  return `<span class="due-over">⏰ 지금!</span>`;
+  if(m <= 15)  return `<span class="due-soon">⏰ ${m}분 후</span>`;
+  if(m < 60)   return `<span class="due-soon">⏰ ${fmt(due)} (${m}분 후)</span>`;
+  if(m < 1440) return `⏰ ${fmt(due)} (${Math.floor(m/60)}시간 후)`;
+  return `⏰ ${fmt(due)}`;
+}
+function saveReq(){
+  const room = document.getElementById('r-room').value.trim();
+  const txt  = document.getElementById('r-txt').value.trim();
+  if(!txt){ toast('요청 내용을 입력하세요'); return; }
+  const dueRaw = document.getElementById('r-due').value;
+  const due = dueRaw ? new Date(dueRaw).getTime() : null;
+  const list = S.get('cm_req', []);
+  const data = { room: room||'—', cat: document.getElementById('r-cat').value, txt,
+                 pri: document.getElementById('r-pri').checked, due };
+  if(reqEditId){
+    const it = list.find(x=>x.id===reqEditId);
+    if(it){ Object.assign(it, data); it.n1=false; it.n2=false; }
+    toast('요청을 수정했습니다');
+  } else {
+    list.unshift({ id:uid(), ...data, st:0, ts:Date.now(), n1:false, n2:false });
+  }
+  S.set('cm_req', list); cancelReqEdit(); renderReq(); renderHome();
+}
+function editReq(id){
+  const it = S.get('cm_req', []).find(x=>x.id===id); if(!it) return;
+  reqEditId = id;
+  document.getElementById('r-room').value = it.room==='—' ? '' : it.room;
+  document.getElementById('r-cat').value = it.cat;
+  document.getElementById('r-pri').checked = !!it.pri;
+  document.getElementById('r-due').value = it.due ? toLocalInput(it.due) : '';
+  document.getElementById('r-txt').value = it.txt;
+  document.getElementById('r-add').textContent = '수정 저장';
+  document.getElementById('r-cancel').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelReqEdit(){
+  reqEditId = null;
+  ['r-room','r-txt','r-due'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('r-pri').checked = false;
+  document.getElementById('r-add').textContent = '접수';
+  document.getElementById('r-cancel').style.display = 'none';
+}
+function cycleReq(id){
+  const list = S.get('cm_req', []);
+  const it = list.find(x=>x.id===id); if(!it) return;
+  it.st = (it.st+1)%3; if(it.st===2) it.done = Date.now();
+  S.set('cm_req', list); renderReq(); renderHome();
+}
+function delReq(id){
+  const list = S.get('cm_req', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_req', list); renderReq(); renderHome();
+  toast('요청을 삭제했습니다', ()=>{
+    const l = S.get('cm_req', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_req', l); renderReq(); renderHome();
+  });
+}
+function clearDone(){
+  const list = S.get('cm_req', []);
+  const removed = list.filter(x=>x.st===2);
+  if(!removed.length){ toast('완료된 요청이 없습니다'); return; }
+  S.set('cm_req', list.filter(x=>x.st!==2)); renderReq(); renderHome();
+  toast(`완료 ${removed.length}건을 정리했습니다`, ()=>{
+    S.set('cm_req', S.get('cm_req', []).concat(removed)); renderReq(); renderHome();
+  });
+}
+function renderReq(){
+  const list = S.get('cm_req', []);
+  const shown = list.filter(x => reqFilter==='all' ? true : x.st===+reqFilter)
+    .sort((a,b)=>
+      (a.st===2)-(b.st===2) ||
+      (a.due||Infinity)-(b.due||Infinity) ||
+      (b.pri?1:0)-(a.pri?1:0) ||
+      b.ts-a.ts);
+  document.getElementById('r-list').innerHTML = shown.length ? shown.map(x=>`
+    <div class="card req" style="${x.st===2?'opacity:.55':''}">
+      <div class="room"><small>ROOM</small>${esc(x.room)}</div>
+      <div class="req-body">
+        <span class="meta">${esc(x.cat)} · 접수 ${fmt(x.ts)}</span>
+        ${x.pri?'<span class="pri-hi"> ⚡긴급</span>':''}
+        ${x.due && x.st<2 ? `<div class="meta" style="margin-top:2px;">${dueLabel(x.due)}</div>` : ''}
+        <p>${esc(x.txt)}</p>
+        <span class="badge st s${x.st}" onclick="cycleReq('${x.id}')">● ${ST_LABEL[x.st]} → 탭하여 변경</span>
+        <div class="r-actions">
+          <button class="btn ghost sm" onclick="editReq('${x.id}')">수정</button>
+          <button class="btn danger sm" onclick="delReq('${x.id}')">삭제</button>
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty">요청이 없습니다. 위에서 접수하세요.</div>';
+}
+document.getElementById('r-filter').addEventListener('click', e=>{
+  const c = e.target.closest('.chip[data-f]'); if(!c) return;
+  reqFilter = c.dataset.f;
+  document.querySelectorAll('#r-filter .chip[data-f]').forEach(x=>x.classList.toggle('on', x===c));
+  renderReq();
+});
+document.getElementById('r-txt').addEventListener('keydown', e=>{ if(e.key==='Enter') saveReq(); });
+
+/* 예약시간 알림: 30초마다 점검 → 10분 전 / 시간 경과 시 1회씩 알림 */
+function notifyReq(title, body){
+  toast(`${title} — ${body}`); beep();
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification(title, {body}); }catch(e){}
+  }
+}
+function checkDue(){
+  const list = S.get('cm_req', []);
+  let changed = false;
+  list.forEach(x=>{
+    if(!x.due || x.st===2) return;
+    const diff = x.due - Date.now();
+    if(diff <= 0 && !x.n2){ x.n2=true; changed=true; notifyReq(`⏰ ${x.room}호 예약시간 지남`, x.txt); }
+    else if(diff > 0 && diff <= 10*60000 && !x.n1){ x.n1=true; changed=true; notifyReq(`⏰ ${x.room}호 10분 전`, x.txt); }
+  });
+  if(changed){ S.set('cm_req', list); renderReq(); renderHome(); }
+}
+
+/* ================= 인수인계 ================= */
+let hoEditId = null;
+function saveHo(){
+  const txt = document.getElementById('h-txt').value.trim();
+  if(!txt){ toast('전달 내용을 입력하세요'); return; }
+  const list = S.get('cm_ho', []);
+  const data = { shift: document.getElementById('h-shift').value,
+                 imp: document.getElementById('h-imp').checked, txt };
+  if(hoEditId){
+    const it = list.find(x=>x.id===hoEditId);
+    if(it) Object.assign(it, data);
+    toast('기록을 수정했습니다');
+  } else {
+    list.unshift({ id:uid(), ...data, ok:false, ts:Date.now() });
+  }
+  S.set('cm_ho', list); cancelHoEdit(); renderHo(); renderHome();
+}
+function editHo(id){
+  const it = S.get('cm_ho', []).find(x=>x.id===id); if(!it) return;
+  hoEditId = id;
+  document.getElementById('h-shift').value = it.shift;
+  document.getElementById('h-imp').checked = !!it.imp;
+  document.getElementById('h-txt').value = it.txt;
+  document.getElementById('h-add').textContent = '수정 저장';
+  document.getElementById('h-cancel').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelHoEdit(){
+  hoEditId = null;
+  document.getElementById('h-txt').value = '';
+  document.getElementById('h-imp').checked = false;
+  document.getElementById('h-add').textContent = '기록';
+  document.getElementById('h-cancel').style.display = 'none';
+}
+function toggleHo(id){
+  const list = S.get('cm_ho', []);
+  const it = list.find(x=>x.id===id);
+  if(it){ it.ok = !it.ok; S.set('cm_ho', list); renderHo(); renderHome(); }
+}
+function delHo(id){
+  const list = S.get('cm_ho', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_ho', list); renderHo(); renderHome();
+  toast('기록을 삭제했습니다', ()=>{
+    const l = S.get('cm_ho', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_ho', l); renderHo(); renderHome();
+  });
+}
+function hoGroupLabel(ts){
+  const now = Date.now();
+  if(sameDay(ts, now)) return '오늘';
+  if(sameDay(ts, now - 86400000)) return '어제';
+  const d = new Date(ts); return `${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+function renderHo(){
+  const list = S.get('cm_ho', []);
+  if(!list.length){ document.getElementById('h-list').innerHTML = '<div class="empty">인수인계 기록이 없습니다.</div>'; return; }
+  let html = '', lastGrp = null;
+  list.forEach(x=>{
+    const g = hoGroupLabel(x.ts);
+    if(g !== lastGrp){ html += `<div class="grp">${g}</div>`; lastGrp = g; }
+    html += `
+    <div class="card ho ${x.imp?'imp':''} ${x.ok?'ok':''}">
+      <span class="meta">${esc(x.shift)} · ${fmt(x.ts)}${x.imp?' · <b style="color:var(--danger)">중요</b>':''}</span>
+      <p>${esc(x.txt)}</p>
+      <button class="btn ghost sm" onclick="toggleHo('${x.id}')">${x.ok?'↩️ 미확인으로':'✅ 확인 완료'}</button>
+      <button class="btn ghost sm" onclick="editHo('${x.id}')">수정</button>
+      <button class="btn danger sm" onclick="delHo('${x.id}')">삭제</button>
+    </div>`;
+  });
+  document.getElementById('h-list').innerHTML = html;
+}
+
+/* ----- 교대 브리핑 ----- */
+function makeBriefing(){
+  const s = getSettings(), n = new Date();
+  const reqs = S.get('cm_req', []).filter(x=>x.st<2);
+  const hos  = S.get('cm_ho', []).filter(x=>!x.ok);
+  const doneToday = S.get('cm_req', []).filter(x=>x.st===2 && x.done && sameDay(x.done, Date.now())).length;
+  const L = [];
+  L.push(`[${s.hname} 교대 브리핑] ${n.getMonth()+1}/${n.getDate()} (${'일월화수목금토'[n.getDay()]}) ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
+  L.push('');
+  L.push(`■ 미완료 요청 (${reqs.length}건)`);
+  if(reqs.length) reqs.forEach(x=>{
+    L.push(`- [${ST_LABEL[x.st]}]${x.pri?'[긴급]':''} ${x.room}호 · ${x.cat} · ${x.txt}${x.due?` (예약 ${fmt(x.due)})`:''}`);
+  }); else L.push('- 없음');
+  L.push('');
+  L.push(`■ 미확인 인수인계 (${hos.length}건)`);
+  if(hos.length) hos.forEach(x=>{
+    L.push(`- ${x.imp?'(중요) ':''}${x.txt.replace(/\n/g,' / ')}`);
+  }); else L.push('- 없음');
+  L.push('');
+  L.push(`■ 오늘 완료 처리 ${doneToday}건`);
+  return L.join('\n');
+}
+function openBrief(){
+  document.getElementById('brief-txt').value = makeBriefing();
+  document.getElementById('brief').classList.add('on');
+}
+function closeBrief(){ document.getElementById('brief').classList.remove('on'); }
+function copyBrief(){ copyText(document.getElementById('brief-txt').value); }
+
+/* ================= 가이드 ================= */
+const G_CATS = ['전체','⭐ 즐겨찾기','🍽️ 맛집','☕ 카페','🏝️ 관광','🎢 액티비티','🛍️ 쇼핑','🏥 응급/편의'];
+let gdFilter = '전체', gdEditId = null;
+
+function openGdForm(editId){
+  gdEditId = editId || null;
+  document.getElementById('g-form-title').textContent = gdEditId ? '장소 수정' : '장소 추가';
+  if(gdEditId){
+    const p = S.get('cm_places', []).find(x=>x.id===gdEditId);
+    if(p){
+      document.getElementById('g-name').value=p.name; document.getElementById('g-cat').value=p.cat;
+      document.getElementById('g-dist').value=p.dist||''; document.getElementById('g-tel').value=p.tel||'';
+      document.getElementById('g-desc').value=p.desc||'';
+    }
+  } else {
+    ['g-name','g-dist','g-tel','g-desc'].forEach(i=>document.getElementById(i).value='');
+  }
+  document.getElementById('g-form').style.display='block';
+  document.getElementById('g-name').focus();
+}
+function closeGdForm(){ document.getElementById('g-form').style.display='none'; gdEditId=null; }
+function saveGd(){
+  const name = document.getElementById('g-name').value.trim();
+  if(!name){ toast('장소 이름을 입력하세요'); return; }
+  const list = S.get('cm_places', []);
+  const data = { name, cat:document.getElementById('g-cat').value,
+    dist:document.getElementById('g-dist').value.trim(),
+    tel:document.getElementById('g-tel').value.trim(),
+    desc:document.getElementById('g-desc').value.trim() };
+  if(gdEditId){
+    const i = list.findIndex(x=>x.id===gdEditId);
+    if(i>-1) list[i] = {...list[i], ...data};
+  } else list.unshift({id:uid(), fav:false, ...data});
+  S.set('cm_places', list); closeGdForm(); renderGd();
+}
+function delGd(id){
+  const list = S.get('cm_places', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_places', list); renderGd();
+  toast('장소를 삭제했습니다', ()=>{
+    const l = S.get('cm_places', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_places', l); renderGd();
+  });
+}
+function favGd(id){
+  const list = S.get('cm_places', []);
+  const p = list.find(x=>x.id===id);
+  if(p){ p.fav = !p.fav; S.set('cm_places', list); renderGd(); }
+}
+function showPlace(id){
+  const p = S.get('cm_places', []).find(x=>x.id===id); if(!p) return;
+  showBigText(p.name, (p.dist?'🚗 '+p.dist+'  ':'') + (p.desc||''), null);
+}
+function renderGd(){
+  const q = document.getElementById('g-q').value.trim().toLowerCase();
+  const list = S.get('cm_places', []).filter(p =>
+    (gdFilter==='전체' || (gdFilter==='⭐ 즐겨찾기' ? p.fav : p.cat===gdFilter)) &&
+    (!q || (p.name+' '+(p.desc||'')).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
+  document.getElementById('g-list').innerHTML = list.length ? list.map(p=>{
+    const enc = encodeURIComponent(p.name);
+    return `
+    <div class="card place">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <button class="star ${p.fav?'on':''}" onclick="favGd('${p.id}')">⭐</button>
+          <h3>${esc(p.name)}</h3>
+        </div>
+        <span class="badge" style="background:var(--gold-soft); color:var(--room-ink);">${esc(p.cat)}</span>
+      </div>
+      <span class="meta">${p.dist?'🚗 '+esc(p.dist):''}${p.tel?' · ☎️ '+esc(p.tel):''}</span>
+      ${p.desc?`<div class="tip">${esc(p.desc)}</div>`:''}
+      <div class="r-actions">
+        <a class="btn ghost sm" style="text-decoration:none;" target="_blank" rel="noopener" href="https://map.naver.com/p/search/${enc}">네이버지도</a>
+        <a class="btn ghost sm" style="text-decoration:none;" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${enc}">구글맵</a>
+        ${p.tel?`<a class="btn ghost sm" href="tel:${esc(p.tel)}" style="text-decoration:none;">전화</a>`:''}
+        <button class="btn ghost sm" onclick="showPlace('${p.id}')">게스트에게</button>
+        <button class="btn ghost sm" onclick="openGdForm('${p.id}')">수정</button>
+        <button class="btn danger sm" onclick="delGd('${p.id}')">삭제</button>
+      </div>
+    </div>`;}).join('') : '<div class="empty">해당하는 장소가 없습니다.</div>';
+}
+
+/* ================= 회화 ================= */
+const P_CATS = ['전체','⭐ 즐겨찾기','인사','체크인·아웃','시설 안내','교통·길안내','요청 응대','문제 해결','결제·환전'];
+let phFilter = '전체', phEditId = null, bigCur = null;
+
+function showBigText(txt, sub, lang){
+  document.getElementById('big-txt').textContent = txt;
+  document.getElementById('big-sub').textContent = sub || '';
+  document.getElementById('big-spk').style.display = lang ? '' : 'none';
+  bigCur = lang ? {txt, lang} : null;
+  document.getElementById('big').classList.add('on');
+}
+function closeBig(){ document.getElementById('big').classList.remove('on'); }
+function speakCur(){ if(bigCur) speak(bigCur.txt, bigCur.lang); }
+function showPhrase(id, lang){
+  const p = S.get('cm_phrases', []).find(x=>x.id===id); if(!p || !p[lang]) return;
+  showBigText(p[lang], p.ko, lang);
+}
+function speakPhrase(id, lang){
+  const p = S.get('cm_phrases', []).find(x=>x.id===id);
+  if(p && p[lang]) speak(p[lang], lang);
+}
+function favPh(id){
+  const list = S.get('cm_phrases', []);
+  const p = list.find(x=>x.id===id);
+  if(p){ p.fav = !p.fav; S.set('cm_phrases', list); renderPh(); }
+}
+function openPhForm(editId){
+  phEditId = editId || null;
+  document.getElementById('p-form-title').textContent = phEditId ? '문구 수정' : '문구 추가';
+  const sel = document.getElementById('p-cat');
+  sel.innerHTML = P_CATS.filter(c=>c!=='전체'&&c!=='⭐ 즐겨찾기').map(c=>`<option>${c}</option>`).join('');
+  if(phEditId){
+    const p = S.get('cm_phrases', []).find(x=>x.id===phEditId);
+    if(p){ sel.value=p.cat;
+      document.getElementById('p-ko').value=p.ko; document.getElementById('p-en').value=p.en||'';
+      document.getElementById('p-ja').value=p.ja||''; document.getElementById('p-zh').value=p.zh||''; }
+  } else ['p-ko','p-en','p-ja','p-zh'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('p-form').style.display='block';
+  document.getElementById('p-ko').focus();
+}
+function closePhForm(){ document.getElementById('p-form').style.display='none'; phEditId=null; }
+function savePh(){
+  const ko = document.getElementById('p-ko').value.trim();
+  const en = document.getElementById('p-en').value.trim();
+  if(!ko || !en){ toast('한국어와 영어는 필수입니다'); return; }
+  const list = S.get('cm_phrases', []);
+  const data = { cat:document.getElementById('p-cat').value, ko, en,
+    ja:document.getElementById('p-ja').value.trim(), zh:document.getElementById('p-zh').value.trim() };
+  if(phEditId){
+    const i = list.findIndex(x=>x.id===phEditId);
+    if(i>-1) list[i] = {...list[i], ...data};
+  } else list.unshift({id:uid(), fav:false, ...data});
+  S.set('cm_phrases', list); closePhForm(); renderPh();
+}
+function delPh(id){
+  const list = S.get('cm_phrases', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_phrases', list); renderPh();
+  toast('문구를 삭제했습니다', ()=>{
+    const l = S.get('cm_phrases', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_phrases', l); renderPh();
+  });
+}
+function renderPh(){
+  const q = document.getElementById('p-q').value.trim().toLowerCase();
+  const list = S.get('cm_phrases', []).filter(p =>
+    (phFilter==='전체' || (phFilter==='⭐ 즐겨찾기' ? p.fav : p.cat===phFilter)) &&
+    (!q || (p.ko+' '+(p.en||'')).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
+  const langRow = (p, lg, label) => p[lg] ? `
+    <div class="lang" onclick="showPhrase('${p.id}','${lg}')">
+      <b>${label}</b><span>${esc(p[lg])}</span>
+      <button class="spk" onclick="event.stopPropagation(); speakPhrase('${p.id}','${lg}')">🔊</button>
+    </div>` : '';
+  document.getElementById('p-list').innerHTML = list.length ? list.map(p=>`
+    <div class="card ph">
+      <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+        <span class="badge" style="background:var(--badge); color:var(--navy);">${esc(p.cat)}</span>
+        <div>
+          <button class="star ${p.fav?'on':''}" onclick="favPh('${p.id}')">⭐</button>
+          <button class="btn ghost sm" onclick="openPhForm('${p.id}')">수정</button>
+          <button class="btn danger sm" onclick="delPh('${p.id}')">삭제</button>
+        </div>
+      </div>
+      <h3>${esc(p.ko)}</h3>
+      ${langRow(p,'en','EN')}${langRow(p,'ja','JA')}${langRow(p,'zh','ZH')}
+    </div>`).join('') : '<div class="empty">해당하는 문구가 없습니다.</div>';
+}
+
+/* ----- 필터 칩 (가이드·회화) ----- */
+(function buildChips(){
+  document.getElementById('g-filter').innerHTML =
+    G_CATS.map(c=>`<span class="chip ${c==='전체'?'on':''}" data-c="${c}">${c}</span>`).join('');
+  document.getElementById('g-filter').addEventListener('click', e=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    gdFilter = c.dataset.c;
+    document.querySelectorAll('#g-filter .chip').forEach(x=>x.classList.toggle('on', x===c));
+    renderGd();
+  });
+  document.getElementById('p-filter').innerHTML =
+    P_CATS.map(c=>`<span class="chip ${c==='전체'?'on':''}" data-c="${c}">${c}</span>`).join('');
+  document.getElementById('p-filter').addEventListener('click', e=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    phFilter = c.dataset.c;
+    document.querySelectorAll('#p-filter .chip').forEach(x=>x.classList.toggle('on', x===c));
+    renderPh();
+  });
+})();
+
+/* ================= 도구: 환율 ================= */
+const FX_UNIT = {USD:1, JPY:100, CNY:1, EUR:1};
+function getFx(){ return {cur:'USD', rates:{USD:1380, JPY:920, CNY:190, EUR:1500}, ...S.get('cm_fx', {})}; }
+function fxRender(){
+  const fx = getFx();
+  document.getElementById('f-cur').value = fx.cur;
+  document.getElementById('f-rate').value = fx.rates[fx.cur];
+  document.getElementById('f-rate-label').textContent = `${FX_UNIT[fx.cur]} ${fx.cur} =`;
+}
+function fxCur(){
+  const fx = getFx();
+  fx.cur = document.getElementById('f-cur').value;
+  S.set('cm_fx', fx); fxRender();
+  document.getElementById('f-amt').value=''; document.getElementById('k-amt').value='';
+}
+function fxRate(){
+  const fx = getFx();
+  const v = parseFloat(document.getElementById('f-rate').value);
+  if(v > 0){ fx.rates[fx.cur] = v; S.set('cm_fx', fx); fxFromF(); }
+}
+function fxFromF(){
+  const fx = getFx(), amt = parseFloat(document.getElementById('f-amt').value);
+  if(isNaN(amt)){ document.getElementById('k-amt').value=''; return; }
+  document.getElementById('k-amt').value = Math.round(amt / FX_UNIT[fx.cur] * fx.rates[fx.cur]);
+}
+function fxFromK(){
+  const fx = getFx(), krw = parseFloat(document.getElementById('k-amt').value);
+  if(isNaN(krw)){ document.getElementById('f-amt').value=''; return; }
+  document.getElementById('f-amt').value = (krw / fx.rates[fx.cur] * FX_UNIT[fx.cur]).toFixed(2);
+}
+
+/* ================= 도구: 게스트 카드 ================= */
+function addCard(){
+  const title = document.getElementById('c-title').value.trim();
+  const addr  = document.getElementById('c-addr').value.trim();
+  if(!title || !addr){ toast('제목과 주소를 입력하세요'); return; }
+  const list = S.get('cm_guestcards', []);
+  list.push({id:uid(), title, addr, note:document.getElementById('c-note').value.trim()});
+  S.set('cm_guestcards', list);
+  ['c-title','c-addr','c-note'].forEach(i=>document.getElementById(i).value='');
+  renderCards();
+}
+function delCard(id){
+  const list = S.get('cm_guestcards', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_guestcards', list); renderCards();
+  toast('카드를 삭제했습니다', ()=>{
+    const l = S.get('cm_guestcards', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_guestcards', l); renderCards();
+  });
+}
+function showCard(id){
+  if(id === 'hotel'){
+    const s = getSettings();
+    if(!s.addr){ toast('설정에서 호텔 주소를 먼저 입력하세요'); switchTab('set'); return; }
+    showBigText(s.addr, `${s.hname} · ${s.hnameEn}${s.tel?' · ☎ '+s.tel:''} — 이 주소로 가주세요 🙏`, null);
+    return;
+  }
+  const c = S.get('cm_guestcards', []).find(x=>x.id===id); if(!c) return;
+  showBigText(c.addr, `${c.title}${c.note?' · '+c.note:''} — 이곳으로 가주세요 🙏 (Please take me here)`, null);
+}
+function renderCards(){
+  const s = getSettings();
+  const list = S.get('cm_guestcards', []);
+  const hotelCard = `
+    <div class="card gcard" style="border-color:var(--gold);" onclick="showCard('hotel')">
+      <h3>🏨 ${esc(s.hname)} (호텔로 돌아가기)</h3>
+      <div class="addr">${s.addr ? esc(s.addr) : '⚠️ 설정에서 호텔 주소를 입력하세요'}</div>
+    </div>`;
+  document.getElementById('c-list').innerHTML = hotelCard + list.map(c=>`
+    <div class="card gcard" onclick="showCard('${c.id}')">
+      <div class="row" style="justify-content:space-between;">
+        <h3>📍 ${esc(c.title)}</h3>
+        <button class="btn danger sm" onclick="event.stopPropagation(); delCard('${c.id}')">삭제</button>
+      </div>
+      <div class="addr">${esc(c.addr)}</div>
+      ${c.note?`<span class="meta">${esc(c.note)}</span>`:''}
+    </div>`).join('');
+}
+
+/* ================= 체크리스트 ================= */
+function getCk(){ return S.get('cm_checklist', {day:[], night:[]}); }
+function ensureCkDate(){
+  const st = S.get('cm_checkstate', {date:'', done:{}});
+  if(st.date !== todayStr()){ S.set('cm_checkstate', {date:todayStr(), done:{}}); }
+}
+function toggleCk(id){
+  ensureCkDate();
+  const st = S.get('cm_checkstate', {date:todayStr(), done:{}});
+  st.done[id] = !st.done[id];
+  S.set('cm_checkstate', st); renderCk(); renderHome();
+}
+function addCk(shift){
+  const inp = document.getElementById(`ck-${shift}-new`);
+  const txt = inp.value.trim();
+  if(!txt){ toast('항목을 입력하세요'); return; }
+  const ck = getCk();
+  ck[shift].push({id:uid(), txt});
+  S.set('cm_checklist', ck); inp.value=''; renderCk();
+}
+function delCk(shift, id){
+  const ck = getCk();
+  const idx = ck[shift].findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = ck[shift].splice(idx,1);
+  S.set('cm_checklist', ck); renderCk(); renderHome();
+  toast('항목을 삭제했습니다', ()=>{
+    const c = getCk(); c[shift].splice(Math.min(idx,c[shift].length),0,item);
+    S.set('cm_checklist', c); renderCk(); renderHome();
+  });
+}
+function renderCk(){
+  ensureCkDate();
+  const ck = getCk();
+  const st = S.get('cm_checkstate', {date:todayStr(), done:{}});
+  ['day','night'].forEach(shift=>{
+    const items = ck[shift];
+    const doneN = items.filter(x=>st.done[x.id]).length;
+    document.getElementById(`ck-${shift}-bar`).style.width = items.length ? (doneN/items.length*100)+'%' : '0%';
+    document.getElementById(`ck-${shift}-list`).innerHTML = items.length ? items.map(x=>`
+      <div class="ck-item ${st.done[x.id]?'done':''}">
+        <input type="checkbox" id="ckb-${x.id}" ${st.done[x.id]?'checked':''} onchange="toggleCk('${x.id}')">
+        <label for="ckb-${x.id}">${esc(x.txt)}</label>
+        <button class="ck-x" onclick="delCk('${shift}','${x.id}')">✕</button>
+      </div>`).join('') : '<div class="empty" style="padding:12px 0;">항목이 없습니다.</div>';
+  });
+}
+
+/* ================= 메모 ================= */
+let mmEditId = null;
+function saveMemo(){
+  const t = document.getElementById('m-title').value.trim();
+  const x = document.getElementById('m-txt').value.trim();
+  if(!t && !x){ toast('내용을 입력하세요'); return; }
+  const list = S.get('cm_memos', []);
+  if(mmEditId){
+    const it = list.find(m=>m.id===mmEditId);
+    if(it){ it.t = t||'(제목 없음)'; it.x = x; }
+    toast('메모를 수정했습니다');
+  } else {
+    list.unshift({id:uid(), t:t||'(제목 없음)', x, pin:false, ts:Date.now()});
+  }
+  S.set('cm_memos', list); cancelMmEdit(); renderMm();
+}
+function editMemo(id){
+  const m = S.get('cm_memos', []).find(m=>m.id===id); if(!m) return;
+  mmEditId = id;
+  document.getElementById('m-title').value = m.t;
+  document.getElementById('m-txt').value = m.x;
+  document.getElementById('m-add').textContent = '수정 저장';
+  document.getElementById('m-cancel').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelMmEdit(){
+  mmEditId = null;
+  document.getElementById('m-title').value=''; document.getElementById('m-txt').value='';
+  document.getElementById('m-add').textContent = '저장';
+  document.getElementById('m-cancel').style.display = 'none';
+}
+function pinMemo(id){
+  const list = S.get('cm_memos', []);
+  const m = list.find(m=>m.id===id);
+  if(m){ m.pin = !m.pin; S.set('cm_memos', list); renderMm(); }
+}
+function delMemo(id){
+  const list = S.get('cm_memos', []);
+  const idx = list.findIndex(m=>m.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_memos', list); renderMm();
+  toast('메모를 삭제했습니다', ()=>{
+    const l = S.get('cm_memos', []); l.splice(Math.min(idx,l.length),0,item);
+    S.set('cm_memos', l); renderMm();
+  });
+}
+function renderMm(){
+  const q = document.getElementById('m-q').value.trim().toLowerCase();
+  const list = S.get('cm_memos', [])
+    .filter(m => !q || (m.t+' '+m.x).toLowerCase().includes(q))
+    .sort((a,b)=>(b.pin?1:0)-(a.pin?1:0) || b.ts-a.ts);
+  document.getElementById('m-list').innerHTML = list.length ? list.map(m=>`
+    <div class="card memo ${m.pin?'pinned':''}">
+      <div class="row" style="justify-content:space-between;">
+        <h3>${m.pin?'📌':'📄'} ${esc(m.t)}</h3>
+        <div>
+          <button class="star ${m.pin?'on':''}" onclick="pinMemo('${m.id}')" title="고정">📌</button>
+          <button class="btn ghost sm" onclick="editMemo('${m.id}')">수정</button>
+          <button class="btn danger sm" onclick="delMemo('${m.id}')">삭제</button>
+        </div>
+      </div>
+      <p>${esc(m.x)}</p>
+      <span class="meta">${fmt(m.ts)}</span>
+    </div>`).join('') : '<div class="empty">저장된 메모가 없습니다.</div>';
+}
+
+/* ================= 설정 ================= */
+const SET_FIELDS = {hname:'s-hname', hnameEn:'s-hnameEn', addr:'s-addr', addrEn:'s-addrEn',
+                    tel:'s-tel', ci:'s-ci', co:'s-co', bf:'s-bf', wifi:'s-wifi'};
+function renderSet(){
+  const s = getSettings();
+  document.getElementById('s-theme').value = s.theme;
+  Object.entries(SET_FIELDS).forEach(([k,id])=>{ document.getElementById(id).value = s[k] || ''; });
+}
+function saveSettings(){
+  const s = getSettings();
+  s.theme = document.getElementById('s-theme').value;
+  Object.entries(SET_FIELDS).forEach(([k,id])=>{ s[k] = document.getElementById(id).value.trim(); });
+  S.set('cm_settings', s);
+  applyTheme(); renderHome(); renderCards();
+}
+function askNotif(){
+  if(!('Notification' in window)){ toast('이 브라우저는 알림을 지원하지 않습니다'); return; }
+  Notification.requestPermission().then(p=>{
+    toast(p==='granted' ? '🔔 알림이 켜졌습니다' : '알림 권한이 거부되었습니다');
+  });
+}
+function exportData(){
+  const data = {};
+  KEYS.forEach(k => { const v = S.get(k, null); if(v !== null) data[k] = v; });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = new Date();
+  a.download = `concierge-backup-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('백업 파일을 내려받았습니다');
+}
+function importData(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const data = JSON.parse(r.result);
+      const ARR_KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_guestcards'];
+      const OBJ_KEYS = ['cm_checklist','cm_checkstate','cm_settings','cm_fx'];
+      KEYS.forEach(k => {
+        if(!(k in data)) return;
+        if(ARR_KEYS.includes(k) && !Array.isArray(data[k])) return;
+        if(OBJ_KEYS.includes(k) && (typeof data[k] !== 'object' || data[k] === null || Array.isArray(data[k]))) return;
+        S.set(k, data[k]);
+      });
+      /* v1 백업(구버전 5개 키만 포함)을 복원한 경우 v2 추가 문구를 병합 */
+      if(Array.isArray(data.cm_phrases) && !data.cm_seed2){
+        S.set('cm_phrases', S.get('cm_phrases', []).concat(seedPhrasesV2()));
+        S.set('cm_seed2', true);
+      }
+      if(!data.cm_seed3) fixSeedPlaceTypos();  /* v1 백업의 시드 오타도 교정 */
+      applyTheme(); fxRender(); renderSet(); renderAll();
+      toast('백업을 불러왔습니다');
+    }catch(e){ toast('백업 파일을 읽을 수 없습니다'); }
+  };
+  r.readAsText(f); input.value='';
+}
+function wipeAll(){
+  if(!confirm('모든 데이터(요청·인수인계·가이드·메모·설정)를 삭제합니다. 계속할까요?')) return;
+  if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+  KEYS.forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+/* ================= 홈 대시보드 ================= */
+function renderHome(){
+  const h = new Date().getHours();
+  const greet = h>=5&&h<11 ? '좋은 아침입니다 ☀️' : h>=11&&h<17 ? '좋은 오후입니다 🌤️'
+              : h>=17&&h<22 ? '좋은 저녁입니다 🌆' : '야간 근무 화이팅 🌙';
+  document.getElementById('hm-greet').textContent = greet;
+
+  const reqs = S.get('cm_req', []);
+  const nWait = reqs.filter(x=>x.st===0).length;
+  const nDoing = reqs.filter(x=>x.st===1).length;
+  const nDone = reqs.filter(x=>x.st===2 && x.done && sameDay(x.done, Date.now())).length;
+  const nHo = S.get('cm_ho', []).filter(x=>!x.ok).length;
+  document.getElementById('hm-stats').innerHTML = `
+    <div class="stat c0" onclick="switchTab('req')"><b>${nWait}</b><span>대기</span></div>
+    <div class="stat c1" onclick="switchTab('req')"><b>${nDoing}</b><span>진행중</span></div>
+    <div class="stat c2" onclick="switchTab('req')"><b>${nDone}</b><span>오늘 완료</span></div>
+    <div class="stat c3" onclick="switchTab('ho')"><b>${nHo}</b><span>미확인 인계</span></div>`;
+
+  const due = reqs.filter(x=>x.st<2 && x.due).sort((a,b)=>a.due-b.due).slice(0,3);
+  document.getElementById('hm-due').innerHTML = due.length ? due.map(x=>`
+    <div class="hm-due-item" onclick="switchTab('req')">
+      <div class="room" style="min-width:48px; font-size:13px;"><small>ROOM</small>${esc(x.room)}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(x.txt)}</div>
+        <div class="meta">${dueLabel(x.due)}</div>
+      </div>
+    </div>`).join('') : '<div class="empty" style="padding:10px 0;">예약시간이 지정된 요청이 없습니다.</div>';
+
+  const s = getSettings();
+  const info = [
+    ['체크인 / 아웃', `${s.ci || '-'} / ${s.co || '-'}`],
+    ['조식', s.bf || '-'],
+    ['와이파이', s.wifi || '-'],
+    ['대표 전화', s.tel || '-'],
+  ];
+  document.getElementById('hm-info').innerHTML =
+    info.map(([k,v])=>`<div><b>${k}</b>${esc(v)}</div>`).join('') +
+    (!s.addr ? '<div class="meta" style="grid-column:1/-1;">⚙️ 설정에서 호텔 정보를 입력하면 여기에 표시됩니다.</div>' : '');
+
+  ensureCkDate();
+  const ck = getCk(), st = S.get('cm_checkstate', {date:todayStr(), done:{}});
+  const shift = (h>=6 && h<18) ? 'day' : 'night';
+  const items = ck[shift], doneN = items.filter(x=>st.done[x.id]).length;
+  document.getElementById('hm-ck-bar').style.width = items.length ? (doneN/items.length*100)+'%' : '0%';
+  document.getElementById('hm-ck-txt').textContent =
+    `${shift==='day'?'☀️ 주간':'🌙 야간'} ${doneN}/${items.length}`;
+}
+
+/* ================= 시드 데이터 ================= */
+function seedPlaces(){
+  return [
+    {cat:'🏝️ 관광', name:'천제연폭포', dist:'차 5분', tel:'', desc:'중문관광단지 내 3단 폭포. 산책로가 잘 되어 있어 가벼운 일정으로 추천.'},
+    {cat:'🏝️ 관광', name:'중문색달해수욕장', dist:'차 5분', tel:'', desc:'서핑으로 유명한 해변. 일몰 명소로도 인기.'},
+    {cat:'🏝️ 관광', name:'대포주상절리대', dist:'차 10분', tel:'', desc:'육각형 돌기둥 해안 절경. 비 오는 날에도 관람 가능.'},
+    {cat:'🏝️ 관광', name:'여미지식물원', dist:'차 5분', tel:'', desc:'실내 온실 중심이라 우천 시 대안 코스로 좋음.'},
+    {cat:'🏝️ 관광', name:'오설록 티뮤지엄', dist:'차 30분', tel:'', desc:'녹차밭 + 카페. 가족·커플 모두 무난한 추천지.'},
+    {cat:'🏝️ 관광', name:'카멜리아힐', dist:'차 25분', tel:'', desc:'동백 수목원. 11월~3월 동백 시즌이 최고.'},
+    {cat:'🍽️ 맛집', name:'중문 갈치·해물 식당가', dist:'차 5~10분', tel:'', desc:'갈치조림·해물뚝배기 등. ※ 정확한 상호·영업시간은 확인 후 직접 추가하세요.'},
+    {cat:'🍽️ 맛집', name:'흑돼지 구이 골목', dist:'차 10분', tel:'', desc:'제주 흑돼지 전문점 다수. 예약 가능 여부 확인 후 안내 권장.'},
+    {cat:'🏥 응급/편의', name:'서귀포의료원 (응급실)', dist:'차 25분', tel:'', desc:'서귀포 시내 종합병원. 야간 응급 시 안내.'},
+    {cat:'🏥 응급/편의', name:'제주국제공항', dist:'차 50분', tel:'', desc:'교통상황에 따라 40~60분. 항공편 출발 2시간 전 호텔 출발 권장.'},
+  ].map(p => ({...p, id:uid()+Math.random().toString(36).slice(2,4), fav:false}));
+}
+/* 시드 장소 설명 오타 교정 (idempotent — 이름+패턴이 맞을 때만 변경, cm_seed3 플래그 설정) */
+function fixSeedPlaceTypos(){
+  const pl = S.get('cm_places', []);
+  pl.forEach(p=>{
+    if(p.name==='제주국제공항' && /출발 2시간 전 출발/.test(p.desc||''))
+      p.desc = '교통상황에 따라 40~60분. 항공편 출발 2시간 전 호텔 출발 권장.';
+    if(p.name==='중문 갈치·해물 식당가' && /구체 상호/.test(p.desc||''))
+      p.desc = '갈치조림·해물뚝배기 등. ※ 정확한 상호·영업시간은 확인 후 직접 추가하세요.';
+  });
+  S.set('cm_places', pl); S.set('cm_seed3', true);
+}
+function seedPhrasesV1(){
+  const d = [
+    ['인사','어서 오십시오. 무엇을 도와드릴까요?','Welcome. How may I help you?','いらっしゃいませ。ご用件をお伺いいたします。','欢迎光临，请问有什么可以帮您？'],
+    ['인사','즐거운 하루 되세요.','Have a wonderful day.','良い一日をお過ごしください。','祝您度过愉快的一天。'],
+    ['인사','잠시만 기다려 주시겠습니까?','Could you wait a moment, please?','少々お待ちいただけますか。','请您稍等片刻。'],
+    ['체크인·아웃','여권을 보여주시겠어요?','May I see your passport, please?','パスポートを拝見してもよろしいですか。','请出示您的护照。'],
+    ['체크인·아웃','짐을 보관해 드릴까요?','Would you like us to store your luggage?','お荷物をお預かりいたしましょうか。','需要为您寄存行李吗？'],
+    ['체크인·아웃','객실이 준비되면 알려드리겠습니다.','We will let you know as soon as your room is ready.','お部屋の準備ができ次第、お知らせいたします。','房间准备好后我们会通知您。'],
+    ['체크인·아웃','레이트 체크아웃은 추가 요금이 발생할 수 있습니다.','Late check-out may incur an additional charge.','レイトチェックアウトは追加料金がかかる場合がございます。','延迟退房可能会产生额外费用。'],
+    ['시설 안내','조식 레스토랑은 이쪽입니다.','The breakfast restaurant is this way.','朝食レストランはこちらでございます。','早餐厅在这边。'],
+    ['시설 안내','와이파이 비밀번호는 키 카드 홀더에 적혀 있습니다.','The Wi-Fi password is on your key card holder.','Wi-Fiのパスワードはカードキーホルダーに記載されています。','WiFi密码写在房卡套上。'],
+    ['시설 안내','엘리베이터는 오른쪽에 있습니다.','The elevator is on your right.','エレベーターは右手にございます。','电梯在您的右手边。'],
+    ['교통·길안내','택시를 불러드리겠습니다. 잠시만 기다려 주세요.','I will call a taxi for you. One moment, please.','タクシーをお呼びいたします。少々お待ちください。','我为您叫出租车，请稍等。'],
+    ['교통·길안내','공항까지는 차로 약 50분 걸립니다.','It takes about 50 minutes to the airport by car.','空港まで車で約50分かかります。','到机场开车大约需要50分钟。'],
+    ['교통·길안내','이 주소를 기사님께 보여주세요.','Please show this address to the driver.','この住所を運転手にお見せください。','请把这个地址给司机看。'],
+    ['요청 응대','바로 처리해 드리겠습니다.','I will take care of it right away.','すぐに対応いたします。','我马上为您处理。'],
+    ['요청 응대','확인 후 객실로 연락드리겠습니다.','I will check and call your room.','確認の上、お部屋にご連絡いたします。','确认后我会致电您的房间。'],
+    ['요청 응대','식당 예약을 도와드릴까요?','Would you like me to make a restaurant reservation?','レストランのご予約をお手伝いいたしましょうか。','需要我帮您预订餐厅吗？'],
+    ['문제 해결','불편을 드려 대단히 죄송합니다.','I sincerely apologize for the inconvenience.','ご不便をおかけして誠に申し訳ございません。','给您带来不便，深表歉意。'],
+    ['문제 해결','즉시 담당자를 보내드리겠습니다.','I will send someone up right away.','すぐに担当者を伺わせます。','我们会立刻派人过去。'],
+    ['문제 해결','객실을 변경해 드릴까요?','Would you like to change rooms?','お部屋の変更をご希望でしょうか。','需要为您更换房间吗？'],
+  ];
+  return d.map(([cat,ko,en,ja,zh]) => ({id:uid()+Math.random().toString(36).slice(2,4), cat,ko,en,ja,zh,fav:false}));
+}
+function seedPhrasesV2(){
+  const d = [
+    ['시설 안내','수영장 수건은 데스크에서 받아가실 수 있습니다.','You can get pool towels at the desk.','プールタオルはデスクでお受け取りいただけます。','泳池毛巾可在前台领取。'],
+    ['요청 응대','어메니티를 추가로 가져다 드리겠습니다.','I will bring you extra amenities.','アメニティを追加でお持ちいたします。','我会为您送上额外的洗漱用品。'],
+    ['요청 응대','모닝콜을 몇 시에 해드릴까요?','What time would you like your wake-up call?','モーニングコールは何時になさいますか。','请问您需要几点的叫醒服务？'],
+    ['문제 해결','분실물은 접수해 두었다가 찾으면 연락드리겠습니다.','We will keep a record and contact you if we find your lost item.','お忘れ物は記録し、見つかり次第ご連絡いたします。','我们会登记您的失物，找到后立即联系您。'],
+    ['교통·길안내','버스 정류장은 호텔 정문에서 도보 3분 거리입니다.','The bus stop is a 3-minute walk from the main entrance.','バス停は正面玄関から徒歩3分です。','公交车站距离酒店正门步行3分钟。'],
+    ['결제·환전','결제는 카드와 현금 모두 가능합니다.','We accept both credit cards and cash.','お支払いはカードと現金の両方がご利用いただけます。','我们接受刷卡和现金支付。'],
+    ['결제·환전','환전은 가까운 은행을 이용하시는 것이 좋습니다.','For currency exchange, we recommend a nearby bank.','両替は近くの銀行のご利用をお勧めいたします。','建议您到附近的银行兑换货币。'],
+  ];
+  return d.map(([cat,ko,en,ja,zh]) => ({id:uid()+Math.random().toString(36).slice(2,4), cat,ko,en,ja,zh,fav:false}));
+}
+function seedChecklist(){
+  const mk = txt => ({id:uid()+Math.random().toString(36).slice(2,4), txt});
+  return {
+    day:['전 근무자 인수인계 확인','로비·라운지 상태 점검','우산·휠체어 등 대여물품 재고 확인','금일 예약 요청(택시·레스토랑) 재확인','VIP·장기투숙 게스트 특이사항 확인'].map(mk),
+    night:['미완료 요청 인계 정리','야간 비상 연락망 확인','로비 야간 점검','조식 예약/안내 준비','다음 날 픽업·택시 예약 리스트 정리'].map(mk),
+  };
+}
+
+/* ================= 초기화 ================= */
+(function init(){
+  if(!S.get('cm_places', null)) S.set('cm_places', seedPlaces());
+  if(!S.get('cm_phrases', null)){
+    S.set('cm_phrases', seedPhrasesV1().concat(seedPhrasesV2()));
+    S.set('cm_seed2', true);
+  } else if(!S.get('cm_seed2', false)){
+    S.set('cm_phrases', S.get('cm_phrases', []).concat(seedPhrasesV2()));
+    S.set('cm_seed2', true);
+  }
+  if(!S.get('cm_checklist', null)) S.set('cm_checklist', seedChecklist());
+  if(!S.get('cm_seed3', false)){ fixSeedPlaceTypos(); }  /* 기존 설치 사용자의 시드 문구 오타 1회 교정 */
+
+  /* 키보드 단축키: 1~9 탭 전환, ESC 닫기 */
+  const ORDER = ['hm','req','ho','gd','ph','tool','ck','mm','set'];
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape'){ closeBig(); closeSheet(); closeBrief(); return; }
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const i = parseInt(e.key, 10);
+    if(i >= 1 && i <= ORDER.length) switchTab(ORDER[i-1]);
+  });
+
+  setInterval(tick, 5000); tick();
+  setInterval(applyTheme, 60000); applyTheme();
+  setInterval(checkDue, 30000);
+  setInterval(()=>{ if(document.getElementById('sec-req').classList.contains('on')) renderReq(); }, 60000);
+  fxRender(); renderSet(); renderAll();
+})();
+function renderAll(){ renderReq(); renderHo(); renderGd(); renderPh(); renderCards(); renderCk(); renderMm(); renderHome(); }
+</script>
+
+<script>
+/* =====================================================================
+   확장 기능: 음성입력(STT) · 엑셀/PPT 보고서 · Firebase 구글 로그인+동기화
+   (별도 스크립트 블록 — 위 전역 함수/상수 S, KEYS, toast, esc, fmt,
+    ST_LABEL, getCk, getSettings, applyTheme, fxRender, renderSet, renderAll 재사용)
+   ===================================================================== */
+
+/* ---------------- 음성 입력 (Web Speech API) ---------------- */
+let _rec = null, _recBtn = null;
+function dictate(targetId, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('이 브라우저는 음성 입력을 지원하지 않습니다 (크롬 권장)'); return; }
+  if(_rec){ _rec.stop(); return; }                 /* 한 번 더 누르면 종료 */
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  _rec = new SR();
+  _rec.lang = 'ko-KR'; _rec.interimResults = true; _rec.continuous = false;
+  const base = el.value ? el.value.replace(/\s+$/,'') + ' ' : '';
+  let finalT = '';
+  _recBtn = btn; if(btn) btn.classList.add('rec');
+  _rec.onresult = e => {
+    let interim = '';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) finalT += t; else interim += t;
+    }
+    el.value = base + finalT + interim;
+  };
+  _rec.onerror = e => {
+    const m = {'not-allowed':'마이크 권한이 필요합니다','no-speech':'음성이 감지되지 않았습니다','audio-capture':'마이크를 찾을 수 없습니다'}[e.error] || ('음성 인식 오류: '+e.error);
+    toast(m);
+  };
+  _rec.onend = () => { if(_recBtn) _recBtn.classList.remove('rec'); _rec=null; _recBtn=null; if(el) el.focus(); };
+  try{ _rec.start(); toast('🎤 듣고 있어요… 버튼을 다시 누르면 종료'); }
+  catch(e){ if(btn) btn.classList.remove('rec'); _rec=null; }
+}
+
+/* ---------------- 보고서 내보내기 (엑셀 / PPT) ---------------- */
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src;
+    s.onload=res; s.onerror=()=>rej(new Error('load fail')); document.head.appendChild(s);
+  });
+}
+function reportStamp(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
+
+async function exportExcel(){
+  toast('엑셀 보고서 생성 중…');
+  try{
+    if(!window.XLSX) await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    const XLSX = window.XLSX, wb = XLSX.utils.book_new();
+    const reqAoa = [['객실','분류','내용','상태','긴급','예약시간','접수시각']];
+    S.get('cm_req',[]).forEach(x=>reqAoa.push([x.room, x.cat, x.txt, ST_LABEL[x.st]||'', x.pri?'긴급':'', x.due?fmt(x.due):'', fmt(x.ts)]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(reqAoa), '요청');
+    const hoAoa = [['교대','중요','확인여부','내용','기록시각']];
+    S.get('cm_ho',[]).forEach(x=>hoAoa.push([x.shift, x.imp?'중요':'', x.ok?'확인':'미확인', x.txt, fmt(x.ts)]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoAoa), '인수인계');
+    const ck = getCk(), cst = S.get('cm_checkstate', {done:{}});
+    const ckAoa = [['근무','항목','완료']];
+    ['day','night'].forEach(sh=>(ck[sh]||[]).forEach(it=>ckAoa.push([sh==='day'?'주간':'야간', it.txt, (cst.done||{})[it.id]?'완료':''])));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ckAoa), '체크리스트');
+    XLSX.writeFile(wb, `concierge-report-${reportStamp()}.xlsx`);
+    toast('엑셀 보고서를 내려받았습니다 📊');
+  }catch(e){ exportCsvFallback(); }
+}
+function exportCsvFallback(){
+  const rows = [['객실','분류','내용','상태','긴급','예약시간','접수시각']];
+  S.get('cm_req',[]).forEach(x=>rows.push([x.room,x.cat,x.txt,ST_LABEL[x.st]||'',x.pri?'긴급':'',x.due?fmt(x.due):'',fmt(x.ts)]));
+  const csv = '﻿' + rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`concierge-report-${reportStamp()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  toast('오프라인이라 CSV로 저장했습니다 (엑셀에서 열림)');
+}
+async function exportPptx(){
+  toast('PPT 보고서 생성 중…');
+  try{
+    if(!window.PptxGenJS) await loadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+    const s = getSettings(), d = new Date();
+    const NAVY='1D2A44', GOLD='C2A36B', BG='F6F3EC';
+    const pptx = new window.PptxGenJS();
+    pptx.defineLayout({name:'W', width:10, height:5.63}); pptx.layout='W';
+    const dateStr = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} (${'일월화수목금토'[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    let sl = pptx.addSlide(); sl.background={color:NAVY};
+    sl.addText((s.hname||'호텔')+' 컨시어지 보고서', {x:0.5,y:1.9,w:9,h:0.9,fontSize:30,bold:true,color:'FFFFFF',align:'center'});
+    sl.addText(dateStr, {x:0.5,y:2.8,w:9,h:0.5,fontSize:15,color:GOLD,align:'center'});
+    const reqs = S.get('cm_req',[]);
+    const nWait=reqs.filter(x=>x.st===0).length, nDoing=reqs.filter(x=>x.st===1).length, nDone=reqs.filter(x=>x.st===2).length;
+    const nHo=S.get('cm_ho',[]).filter(x=>!x.ok).length;
+    sl = pptx.addSlide();
+    sl.addText('현황 요약', {x:0.5,y:0.35,w:9,h:0.6,fontSize:24,bold:true,color:NAVY});
+    [['대기',nWait],['진행중',nDoing],['완료',nDone],['미확인 인계',nHo]].forEach((c,i)=>{
+      sl.addText([{text:String(c[1]),options:{fontSize:40,bold:true,color:GOLD,breakLine:true}},{text:c[0],options:{fontSize:14,color:NAVY}}],
+        {x:0.55+i*2.3,y:1.6,w:2,h:1.6,align:'center',valign:'middle',fill:{color:BG},line:{color:'DDD5C2',width:1}});
+    });
+    sl = pptx.addSlide();
+    sl.addText('요청 목록', {x:0.5,y:0.35,w:9,h:0.6,fontSize:24,bold:true,color:NAVY});
+    const head = ['객실','분류','내용','상태','예약'].map(h=>({text:h,options:{bold:true,color:'FFFFFF',fill:{color:NAVY}}}));
+    const body = reqs.slice(0,12).map(x=>[x.room,x.cat,x.txt,ST_LABEL[x.st]||'',x.due?fmt(x.due):''].map(c=>({text:String(c??'')})));
+    sl.addTable([head].concat(body), {x:0.4,y:1.1,w:9.2,fontSize:11,valign:'middle',border:{type:'solid',color:'DDDDDD',pt:1},colW:[1,1.4,4,1.2,1.6]});
+    if(reqs.length>12) sl.addText(`외 ${reqs.length-12}건`, {x:0.4,y:5.1,w:9,h:0.3,fontSize:10,color:'888888'});
+    sl = pptx.addSlide();
+    sl.addText('인수인계 (미확인)', {x:0.5,y:0.35,w:9,h:0.6,fontSize:24,bold:true,color:NAVY});
+    const hos = S.get('cm_ho',[]).filter(x=>!x.ok).slice(0,12);
+    sl.addText(hos.length ? hos.map(x=>`• ${x.imp?'[중요] ':''}${x.txt.replace(/\n/g,' ')}`).join('\n\n') : '미확인 인수인계가 없습니다.',
+      {x:0.6,y:1.1,w:8.8,h:4.2,fontSize:14,color:'333333',valign:'top'});
+    await pptx.writeFile({fileName:`concierge-report-${reportStamp()}.pptx`});
+    toast('PPT 보고서를 내려받았습니다 📑');
+  }catch(e){ toast('PPT 생성 실패 — 인터넷 연결을 확인하세요'); }
+}
+
+/* ---------------- Firebase 구글 로그인 + 동기화 ---------------- */
+const FB_VER = '10.12.2';
+const clientId = Math.random().toString(36).slice(2);
+let FB = null, _unsub = null, _pushTimer = null, _applyingRemote = false;
+
+async function fbLoad(){
+  const [appMod, authMod, fsMod] = await Promise.all([
+    import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`),
+    import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-auth.js`),
+    import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`),
+  ]);
+  return {appMod, authMod, fsMod};
+}
+async function fbInit(){
+  const cfgStr = localStorage.getItem('cm_fbcfg');
+  if(!cfgStr){ renderCloud(null,'noconfig'); return; }
+  let cfg; try{ cfg = JSON.parse(cfgStr); }catch(e){ renderCloud(null,'badconfig'); return; }
+  try{
+    const {appMod, authMod, fsMod} = await fbLoad();
+    const app = appMod.initializeApp(cfg);
+    FB = {app, auth: authMod.getAuth(app), db: fsMod.getFirestore(app), authMod, fsMod, user:null};
+    authMod.getRedirectResult(FB.auth).catch(()=>{});
+    authMod.onAuthStateChanged(FB.auth, u=>{
+      FB.user = u; renderCloud(u, 'ready');
+      if(u) onLogin(); else stopSync();
+    });
+  }catch(e){ renderCloud(null,'loaderr'); }
+}
+function authClick(){
+  if(!FB){ switchTab('set'); toast('설정에서 Firebase 연동을 먼저 완료하세요'); return; }
+  if(FB.user){ if(confirm('로그아웃할까요? (데이터는 클라우드에 남아 있습니다)')) FB.authMod.signOut(FB.auth); return; }
+  const provider = new FB.authMod.GoogleAuthProvider();
+  FB.authMod.signInWithPopup(FB.auth, provider).catch(err=>{
+    const code = (err && (err.code||err.message)) || '';
+    if(/popup|blocked|cancelled/i.test(code)) FB.authMod.signInWithRedirect(FB.auth, provider);
+    else toast('로그인 실패: '+code);
+  });
+}
+function userDoc(){ return FB.fsMod.doc(FB.db, 'users', FB.user.uid); }
+async function onLogin(){
+  try{
+    const snap = await FB.fsMod.getDoc(userDoc());
+    if(snap.exists()) applyRemote(snap.data());
+    else await cloudPushNow();          /* 첫 로그인: 이 기기 데이터를 올림 */
+  }catch(e){ toast('동기화 읽기 실패'); }
+  _unsub = FB.fsMod.onSnapshot(userDoc(), snap=>{
+    if(!snap.exists() || snap.metadata.hasPendingWrites) return;
+    const remote = snap.data();
+    if(remote._src === clientId) return;  /* 내 기기가 올린 변경은 무시 */
+    applyRemote(remote);
+  });
+  window.__cloudReady = true;
+  toast('☁️ 동기화가 켜졌습니다');
+}
+function stopSync(){ window.__cloudReady=false; if(_unsub){ _unsub(); _unsub=null; } }
+function applyRemote(remote){
+  _applyingRemote = true;
+  KEYS.forEach(k=>{ if(k in remote) localStorage.setItem(k, JSON.stringify(remote[k])); });
+  _applyingRemote = false;
+  applyTheme(); fxRender(); renderSet(); renderAll();
+}
+function scheduleCloudPush(){
+  if(!window.__cloudReady || _applyingRemote) return;
+  clearTimeout(_pushTimer);
+  _pushTimer = setTimeout(cloudPushNow, 1200);
+}
+async function cloudPushNow(){
+  if(!FB || !FB.user) return;
+  const data = {_src: clientId, updatedAt: Date.now()};
+  KEYS.forEach(k=>{ const v = S.get(k, null); if(v !== null) data[k] = v; });
+  try{ await FB.fsMod.setDoc(userDoc(), data); }catch(e){}
+}
+function renderCloud(user, state){
+  const btn = document.getElementById('authBtn');
+  const st = document.getElementById('cloud-status'), act = document.getElementById('cloud-actions');
+  if(btn){
+    if(user){ btn.classList.add('in'); btn.textContent='✓'; btn.title=(user.displayName||user.email||'로그인됨'); }
+    else { btn.classList.remove('in'); btn.textContent='👤'; btn.title='로그인'; }
+  }
+  if(!st || !act) return;
+  if(user){
+    st.innerHTML = `✅ <b>${esc(user.displayName||user.email)}</b> 님 로그인됨 · 여러 기기 자동 동기화 켜짐`;
+    act.innerHTML = `<button class="btn ghost sm" onclick="authClick()">로그아웃</button><button class="btn ghost sm" onclick="cloudPushNow()">지금 올리기</button>`;
+  } else if(state==='ready'){
+    st.innerHTML = '로그인하면 휴대폰·PC에 자동으로 동기화됩니다.';
+    act.innerHTML = `<button class="btn gold sm" onclick="authClick()">🔑 구글로 로그인</button>`;
+  } else if(state==='noconfig'){
+    st.innerHTML = '⚙️ 아직 Firebase 연동 전입니다. 아래 설정을 완료하면 구글 로그인이 켜집니다. <br>(지금은 이 기기에만 저장됩니다)';
+    act.innerHTML = '';
+  } else if(state==='badconfig'){
+    st.innerHTML = '⚠️ 저장된 Firebase 설정값이 올바르지 않습니다. 아래에 다시 붙여넣어 주세요.'; act.innerHTML = '';
+  } else {
+    st.innerHTML = '⚠️ Firebase 연결 실패 — 설정값 또는 인터넷을 확인하세요.'; act.innerHTML = '';
+  }
+}
+function saveFbConfig(){
+  const raw = document.getElementById('s-fbconfig').value.trim();
+  if(!raw){ toast('설정값을 붙여넣으세요'); return; }
+  const m = raw.match(/\{[\s\S]*\}/);
+  const src = m ? m[0] : raw;
+  try{
+    let obj; try{ obj = JSON.parse(src); }catch(_){ obj = (new Function('return ('+src+')'))(); }
+    if(!obj || !obj.apiKey || !obj.projectId) throw new Error('필수값 누락');
+    localStorage.setItem('cm_fbcfg', JSON.stringify(obj));
+    toast('저장됨 · 새로고침합니다'); setTimeout(()=>location.reload(), 700);
+  }catch(e){ toast('설정값을 인식할 수 없습니다 — firebaseConfig 객체 전체를 붙여넣어 주세요'); }
+}
+
+/* wipeAll 재정의: 로그인 상태면 클라우드 문서도 함께 삭제 (설정값 cm_fbcfg는 유지) */
+function wipeAll(){
+  if(!confirm('모든 데이터(요청·인수인계·가이드·메모·설정)를 삭제합니다. 계속할까요?')) return;
+  if(!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+  KEYS.forEach(k=>localStorage.removeItem(k));
+  if(FB && FB.user){ try{ FB.fsMod.deleteDoc(userDoc()); }catch(e){} }
+  location.reload();
+}
+
+/* ---------------- 확장 초기화 ---------------- */
+(function extInit(){
+  const _origSet = S.set.bind(S);
+  S.set = function(k,v){ _origSet(k,v); scheduleCloudPush(); };   /* 저장 시 클라우드 푸시 예약 */
+  const dom = document.getElementById('fb-domain'); if(dom) dom.textContent = location.hostname || '(로컬 파일)';
+  const cfg = localStorage.getItem('cm_fbcfg');
+  if(cfg){ try{ document.getElementById('s-fbconfig').value = JSON.stringify(JSON.parse(cfg), null, 2); }catch(e){} }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) document.querySelectorAll('[onclick^="dictate"]').forEach(b=>b.style.display='none');
+  fbInit();
+})();
+</script>
+</body>
+</html>
