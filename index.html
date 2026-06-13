@@ -1710,6 +1710,16 @@ async function exportPptx(){
 }
 
 /* ---------------- Firebase 구글 로그인 + 동기화 ---------------- */
+/* 기본 연동값(공개 가능한 클라이언트 식별자). 설정 화면에서 다른 프로젝트로 덮어쓸 수 있음. */
+const DEFAULT_FBCFG = {
+  apiKey: "AIzaSyDbKfs3uCcmpBMVyTVu-uSwj_AY0S13gmg",
+  authDomain: "concierge-mate.firebaseapp.com",
+  projectId: "concierge-mate",
+  storageBucket: "concierge-mate.firebasestorage.app",
+  messagingSenderId: "495532045227",
+  appId: "1:495532045227:web:478d52edc995c2c25b98ee",
+  measurementId: "G-8LXQCYK805"
+};
 const FB_VER = '10.12.2';
 const clientId = Math.random().toString(36).slice(2);
 let FB = null, _unsub = null, _pushTimer = null, _applyingRemote = false;
@@ -1724,8 +1734,9 @@ async function fbLoad(){
 }
 async function fbInit(){
   const cfgStr = localStorage.getItem('cm_fbcfg');
-  if(!cfgStr){ renderCloud(null,'noconfig'); return; }
-  let cfg; try{ cfg = JSON.parse(cfgStr); }catch(e){ renderCloud(null,'badconfig'); return; }
+  let cfg = DEFAULT_FBCFG;                                  /* 기본 내장 프로젝트 */
+  if(cfgStr){ try{ cfg = JSON.parse(cfgStr); }catch(e){ renderCloud(null,'badconfig'); return; } }
+  if(!cfg || !cfg.apiKey){ renderCloud(null,'noconfig'); return; }
   try{
     const {appMod, authMod, fsMod} = await fbLoad();
     const app = appMod.initializeApp(cfg);
@@ -1854,8 +1865,7 @@ async function wipeAll(){
   const _origSet = S.set.bind(S);
   S.set = function(k,v){ _origSet(k,v); if(!_applyingRemote) localStorage.setItem('cm_localTs', String(Date.now())); scheduleCloudPush(); };   /* 로컬 변경 시각 기록 + 클라우드 푸시 예약 */
   const dom = document.getElementById('fb-domain'); if(dom) dom.textContent = location.hostname || '(로컬 파일)';
-  const cfg = localStorage.getItem('cm_fbcfg');
-  if(cfg){ try{ document.getElementById('s-fbconfig').value = JSON.stringify(JSON.parse(cfg), null, 2); }catch(e){} }
+  try{ const _c = localStorage.getItem('cm_fbcfg'); document.getElementById('s-fbconfig').value = JSON.stringify(_c?JSON.parse(_c):DEFAULT_FBCFG, null, 2); }catch(e){}
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR) document.querySelectorAll('[onclick^="dictate"]').forEach(b=>b.style.display='none');
   fbInit();
