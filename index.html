@@ -109,6 +109,16 @@ try{
   .gtag{display:inline-block; font-size:11px; font-weight:700; background:var(--badge); color:var(--navy); border-radius:6px; padding:2px 7px; margin:0 4px 4px 0;}
   .gn h3{font-size:15px; display:inline;}
   .gn .gn-room{font-weight:800; color:var(--room-ink); background:var(--gold-soft); border-radius:8px; padding:2px 9px; font-size:13px; margin-right:8px;}
+  .pb-row{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid var(--line);}
+  .pb-row:last-child{border-bottom:none;}
+  .pb-row .pb-name{flex:1; font-size:14px;}
+  .pb-row .pb-cat{font-size:10px; color:var(--muted); display:block;}
+  .pb-grp{font-size:11px; font-weight:700; color:var(--gold); margin:10px 2px 2px;}
+  .lf .lf-item{font-size:15px; font-weight:700;}
+  .lf .lf-meta{font-size:12px; color:var(--ink); opacity:.8; margin-top:4px;}
+  .lf-st{cursor:pointer; user-select:none;}
+  .lf-st.keep{background:var(--wait-bg); color:var(--wait);}
+  .lf-st.done{background:var(--done-bg); color:var(--done);}
   .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
   .chip{
     border:1px solid var(--line); background:var(--card); border-radius:999px;
@@ -278,6 +288,7 @@ try{
   <button data-t="gd"><span class="ico">🗺️</span>가이드</button>
   <button data-t="ph"><span class="ico">💬</span>회화</button>
   <button data-t="guest" class="sec"><span class="ico">🧑</span>게스트</button>
+  <button data-t="lost" class="sec"><span class="ico">🧳</span>분실물</button>
   <button data-t="tool" class="sec"><span class="ico">🧰</span>도구</button>
   <button data-t="ck" class="sec"><span class="ico">✅</span>체크</button>
   <button data-t="mm" class="sec"><span class="ico">📌</span>메모</button>
@@ -296,6 +307,13 @@ try{
     <button onclick="switchTab('ho')"><span>🔄</span>인수인계</button>
     <button onclick="openBrief()"><span>📝</span>교대 브리핑</button>
     <button onclick="showCard('hotel')"><span>🚕</span>택시 카드</button>
+  </div>
+  <div class="card" id="hm-weather-card">
+    <div class="row" style="justify-content:space-between;">
+      <h2 style="margin:0;">🌤️ 제주 중문 날씨</h2>
+      <button class="btn ghost sm" onclick="renderWeather(true)">새로고침</button>
+    </div>
+    <div id="hm-weather" style="margin-top:10px;"></div>
   </div>
   <div class="card" id="hm-due-card">
     <h2>⏰ 다가오는 예약 요청</h2>
@@ -447,6 +465,30 @@ try{
   <div id="gn-list"></div>
 </section>
 
+<!-- ============ 분실물 대장 ============ -->
+<section id="sec-lost">
+  <p class="hint">분실물은 '완료 비우기'로 사라지지 않는 별도 대장입니다. 미반환 건수는 교대 브리핑에 자동 포함돼요.</p>
+  <div class="card">
+    <input id="lf-item" placeholder="분실물 (예: 검정 우산, 아이폰15)" style="margin-bottom:8px;">
+    <div class="row" style="margin-bottom:8px;">
+      <input id="lf-place" placeholder="발견 장소 (예: 로비 소파)" style="flex:1;">
+      <input id="lf-store" placeholder="보관 위치 (예: 프런트 캐비닛)" style="flex:1;">
+    </div>
+    <input id="lf-contact" placeholder="게스트 연락처/객실 (선택)" style="margin-bottom:8px;">
+    <div class="row">
+      <input id="lf-note" placeholder="메모 (선택)" style="flex:1;">
+      <button class="btn gold sm" onclick="addLost()">등록</button>
+    </div>
+  </div>
+  <div class="chips" id="lf-filter">
+    <span class="chip on" data-lf="all">전체</span>
+    <span class="chip" data-lf="보관중">보관중</span>
+    <span class="chip" data-lf="반환완료">반환완료</span>
+  </div>
+  <input id="lf-q" placeholder="🔍 분실물 검색" oninput="renderLost()" style="margin-bottom:10px;">
+  <div id="lf-list"></div>
+</section>
+
 <!-- ============ 도구 ============ -->
 <section id="sec-tool">
   <div class="card">
@@ -474,6 +516,21 @@ try{
       <input type="number" id="k-amt" inputmode="decimal" oninput="fxFromK()" style="flex:1;" placeholder="0">
     </div>
     <p class="meta">⚠️ 환율은 예시값입니다. 당일 환율을 확인해 직접 수정하세요. 수정한 값은 저장됩니다.</p>
+  </div>
+  <div class="card">
+    <h2>☎️ 전화번호부 <span class="meta">— 탭하면 바로 전화</span></h2>
+    <div id="pb-list"></div>
+    <div class="lbl">번호 추가</div>
+    <div class="row" style="margin-bottom:8px;">
+      <select id="pb-cat" style="width:90px; flex:none;">
+        <option>🚨 비상</option><option>ℹ️ 안내</option><option>🏨 내선</option><option>🤝 협력</option><option>📦 기타</option>
+      </select>
+      <input id="pb-label" placeholder="이름 (예: 하우스키핑)" style="flex:1;">
+    </div>
+    <div class="row">
+      <input id="pb-tel" placeholder="전화번호 (예: 064-... 또는 내선 1234)" style="flex:1;">
+      <button class="btn gold sm" onclick="addContact()">추가</button>
+    </div>
   </div>
   <div class="card">
     <h2>🚕 게스트 카드 <span class="meta">— 탭하면 기사님께 보여주는 큰 화면</span></h2>
@@ -613,7 +670,8 @@ try{
 <div id="sheet">
   <div class="grid">
     <button onclick="switchTab('guest'); closeSheet();"><span>🧑</span>게스트 노트</button>
-    <button onclick="switchTab('tool'); closeSheet();"><span>🧰</span>도구 (환율·택시카드)</button>
+    <button onclick="switchTab('lost'); closeSheet();"><span>🧳</span>분실물 대장</button>
+    <button onclick="switchTab('tool'); closeSheet();"><span>🧰</span>도구 (환율·전화·택시)</button>
     <button onclick="switchTab('ck'); closeSheet();"><span>✅</span>체크리스트</button>
     <button onclick="switchTab('mm'); closeSheet();"><span>📌</span>메모</button>
     <button onclick="switchTab('set'); closeSheet();"><span>⚙️</span>설정</button>
@@ -645,7 +703,7 @@ const S = {
   get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
-const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_notes','cm_settings','cm_fx','cm_seed2','cm_seed3'];
+const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_notes','cm_lost','cm_contacts','cm_settings','cm_fx','cm_seed2','cm_seed3','cm_seed4'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 const fmt = ts => { const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -721,13 +779,15 @@ function cycleTheme(){
 }
 
 /* ---------------- 탭 & 시트 ---------------- */
-const SEC_TABS = ['guest','tool','ck','mm','set'];
+const SEC_TABS = ['guest','lost','tool','ck','mm','set'];
 function switchTab(t){
   document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.getElementById('moreBtn').classList.toggle('on', SEC_TABS.includes(t));
   document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on', s.id==='sec-'+t));
   if(t==='hm') renderHome();
   if(t==='guest' && typeof renderGuests==='function') renderGuests();
+  if(t==='lost' && typeof renderLost==='function') renderLost();
+  if(t==='tool' && typeof renderContacts==='function') renderContacts();
   window.scrollTo({top:0});
 }
 document.getElementById('tabs').addEventListener('click', e=>{
@@ -955,6 +1015,12 @@ function makeBriefing(){
   L.push(`■ 미확인 인수인계 (${hos.length}건)`);
   if(hos.length) hos.forEach(x=>{
     L.push(`- ${x.imp?'(중요) ':''}${x.txt.replace(/\n/g,' / ')}`);
+  }); else L.push('- 없음');
+  const lost = S.get('cm_lost', []).filter(x=>x.status!=='반환완료');
+  L.push('');
+  L.push(`■ 미반환 분실물 (${lost.length}건)`);
+  if(lost.length) lost.forEach(x=>{
+    L.push(`- ${x.item}${x.place?` (발견:${x.place})`:''}${x.store?` / 보관:${x.store}`:''}`);
   }); else L.push('- 없음');
   L.push('');
   L.push(`■ 오늘 완료 처리 ${doneToday}건`);
@@ -1394,7 +1460,7 @@ function importData(input){
   r.onload = () => {
     try{
       const data = JSON.parse(r.result);
-      const ARR_KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_guestcards','cm_notes'];
+      const ARR_KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_guestcards','cm_notes','cm_lost','cm_contacts'];
       const OBJ_KEYS = ['cm_checklist','cm_checkstate','cm_settings','cm_fx'];
       KEYS.forEach(k => {
         if(!(k in data)) return;
@@ -1462,6 +1528,7 @@ function renderHome(){
   document.getElementById('hm-ck-bar').style.width = items.length ? (doneN/items.length*100)+'%' : '0%';
   document.getElementById('hm-ck-txt').textContent =
     `${shift==='day'?'☀️ 주간':'🌙 야간'} ${doneN}/${items.length}`;
+  if(typeof renderWeather==='function') renderWeather();
 }
 
 /* ================= 시드 데이터 ================= */
@@ -1548,7 +1615,7 @@ function seedChecklist(){
   if(!S.get('cm_seed3', false)){ fixSeedPlaceTypos(); }  /* 기존 설치 사용자의 시드 문구 오타 1회 교정 */
 
   /* 키보드 단축키: 1~9 탭 전환, ESC 닫기 */
-  const ORDER = ['hm','req','ho','gd','ph','guest','tool','ck','mm','set'];
+  const ORDER = ['hm','req','ho','gd','ph','guest','lost','tool','ck','mm','set'];
   document.addEventListener('keydown', e=>{
     if(e.key === 'Escape'){ closeBig(); closeSheet(); closeBrief(); return; }
     if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
@@ -1568,7 +1635,10 @@ function seedChecklist(){
   })();
   fxRender(); renderSet(); renderAll();
 })();
-function renderAll(){ renderReq(); renderHo(); renderGd(); renderPh(); renderCards(); renderCk(); renderMm(); renderHome(); if(typeof renderGuests==='function') renderGuests(); }
+function renderAll(){ renderReq(); renderHo(); renderGd(); renderPh(); renderCards(); renderCk(); renderMm(); renderHome();
+  if(typeof renderGuests==='function') renderGuests();
+  if(typeof renderLost==='function') renderLost();
+  if(typeof renderContacts==='function') renderContacts(); }
 </script>
 
 <script>
@@ -2022,6 +2092,191 @@ function tpl(i){
   renderTpl();
   renderGuests();
   renderReq();   /* roomNote 정의 후 객실 노트 마커 반영 */
+})();
+</script>
+
+<script>
+/* =====================================================================
+   v4: 전화번호부(퀵다이얼) · 분실물 대장 · 제주 날씨/일몰 위젯
+   ===================================================================== */
+
+/* ---------------- 전화번호부 ---------------- */
+function seedContacts(){
+  /* 보편적으로 정확한 번호만 기본 제공. 병원·택시·내선 등은 직접 추가. */
+  return [
+    {cat:'🚨 비상', label:'화재·구급 (119)', tel:'119'},
+    {cat:'🚨 비상', label:'경찰 (112)', tel:'112'},
+    {cat:'🚨 비상', label:'해양 긴급 (122)', tel:'122'},
+    {cat:'ℹ️ 안내', label:'관광통역안내 (24h 다국어)', tel:'1330'},
+    {cat:'ℹ️ 안내', label:'외국인종합안내', tel:'1345'},
+  ].map(c=>({id:uid()+Math.random().toString(36).slice(2,4), ...c}));
+}
+function addContact(){
+  const label = document.getElementById('pb-label').value.trim();
+  const tel   = document.getElementById('pb-tel').value.trim();
+  if(!label || !tel){ toast('이름과 번호를 입력하세요'); return; }
+  const list = S.get('cm_contacts', []);
+  list.push({id:uid(), cat:document.getElementById('pb-cat').value, label, tel});
+  S.set('cm_contacts', list);
+  document.getElementById('pb-label').value=''; document.getElementById('pb-tel').value='';
+  renderContacts();
+}
+function delContact(id){
+  const list = S.get('cm_contacts', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_contacts', list); renderContacts();
+  toast('번호를 삭제했습니다', ()=>{ const l=S.get('cm_contacts',[]); l.splice(Math.min(idx,l.length),0,item); S.set('cm_contacts',l); renderContacts(); });
+}
+function renderContacts(){
+  const box = document.getElementById('pb-list'); if(!box) return;
+  const list = S.get('cm_contacts', []);
+  if(!list.length){ box.innerHTML = '<div class="empty" style="padding:12px 0;">등록된 번호가 없습니다.</div>'; return; }
+  const order = ['🚨 비상','ℹ️ 안내','🏨 내선','🤝 협력','📦 기타'];
+  const byCat = {};
+  list.forEach(c=>{ (byCat[c.cat] = byCat[c.cat] || []).push(c); });
+  let html = '';
+  order.filter(cat=>byCat[cat]).forEach(cat=>{
+    html += `<div class="pb-grp">${esc(cat)}</div>`;
+    byCat[cat].forEach(c=>{
+      html += `<div class="pb-row">
+        <div class="pb-name">${esc(c.label)}<span class="pb-cat">${esc(c.tel)}</span></div>
+        <a class="btn gold sm" style="text-decoration:none;" href="tel:${encodeURIComponent(c.tel)}">📞 전화</a>
+        <button class="btn danger sm" onclick="delContact('${c.id}')">삭제</button>
+      </div>`;
+    });
+  });
+  box.innerHTML = html;
+}
+
+/* ---------------- 분실물 대장 ---------------- */
+let lostFilter = 'all';
+function addLost(){
+  const item = document.getElementById('lf-item').value.trim();
+  if(!item){ toast('분실물명을 입력하세요'); return; }
+  const list = S.get('cm_lost', []);
+  list.unshift({ id:uid(), item,
+    place: document.getElementById('lf-place').value.trim(),
+    store: document.getElementById('lf-store').value.trim(),
+    contact: document.getElementById('lf-contact').value.trim(),
+    note: document.getElementById('lf-note').value.trim(),
+    status:'보관중', ts:Date.now() });
+  S.set('cm_lost', list);
+  ['lf-item','lf-place','lf-store','lf-contact','lf-note'].forEach(i=>document.getElementById(i).value='');
+  renderLost(); renderHome();
+}
+function toggleLost(id){
+  const list = S.get('cm_lost', []);
+  const it = list.find(x=>x.id===id); if(!it) return;
+  it.status = it.status==='반환완료' ? '보관중' : '반환완료';
+  if(it.status==='반환완료') it.returnedTs = Date.now();
+  S.set('cm_lost', list); renderLost(); renderHome();
+}
+function delLost(id){
+  const list = S.get('cm_lost', []);
+  const idx = list.findIndex(x=>x.id===id); if(idx<0) return;
+  const [item] = list.splice(idx,1);
+  S.set('cm_lost', list); renderLost(); renderHome();
+  toast('분실물 기록을 삭제했습니다', ()=>{ const l=S.get('cm_lost',[]); l.splice(Math.min(idx,l.length),0,item); S.set('cm_lost',l); renderLost(); renderHome(); });
+}
+function renderLost(){
+  const box = document.getElementById('lf-list'); if(!box) return;
+  const q = (document.getElementById('lf-q').value||'').trim().toLowerCase();
+  const list = S.get('cm_lost', [])
+    .filter(x => lostFilter==='all' ? true : x.status===lostFilter)
+    .filter(x => !q || (x.item+' '+(x.place||'')+' '+(x.store||'')+' '+(x.contact||'')+' '+(x.note||'')).toLowerCase().includes(q))
+    .sort((a,b)=> (a.status==='반환완료')-(b.status==='반환완료') || b.ts-a.ts);
+  box.innerHTML = list.length ? list.map(x=>{
+    const done = x.status==='반환완료';
+    return `<div class="card lf" style="${done?'opacity:.6':''}">
+      <div class="row" style="justify-content:space-between;">
+        <span class="lf-item">🧳 ${esc(x.item)}</span>
+        <span class="badge lf-st ${done?'done':'keep'}" onclick="toggleLost('${x.id}')">● ${esc(x.status)} → 탭</span>
+      </div>
+      <div class="lf-meta">
+        ${x.place?`📍 발견: ${esc(x.place)}<br>`:''}
+        ${x.store?`📦 보관: ${esc(x.store)}<br>`:''}
+        ${x.contact?`🙋 연락: ${esc(x.contact)}<br>`:''}
+        ${x.note?`📝 ${esc(x.note)}<br>`:''}
+        <span class="meta">등록 ${fmt(x.ts)}</span>
+      </div>
+      <div class="r-actions"><button class="btn danger sm" onclick="delLost('${x.id}')">삭제</button></div>
+    </div>`;}).join('') : '<div class="empty">해당하는 분실물이 없습니다.</div>';
+}
+(function bindLostFilter(){
+  const el = document.getElementById('lf-filter'); if(!el) return;
+  el.addEventListener('click', e=>{
+    const c = e.target.closest('.chip[data-lf]'); if(!c) return;
+    lostFilter = c.dataset.lf;
+    el.querySelectorAll('.chip[data-lf]').forEach(x=>x.classList.toggle('on', x===c));
+    renderLost();
+  });
+})();
+
+/* ---------------- 제주 중문 날씨/일몰 (Open-Meteo, 키 불필요) ---------------- */
+const WX_URL = 'https://api.open-meteo.com/v1/forecast?latitude=33.246&longitude=126.412&current=temperature_2m,weather_code,wind_speed_10m&daily=sunrise,sunset,precipitation_probability_max,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=1';
+function wmo(c){
+  if(c===0) return {e:'☀️', t:'맑음'};
+  if(c<=3)  return {e:'⛅', t:'구름 조금'};
+  if(c<=48) return {e:'🌫️', t:'안개'};
+  if(c<=57) return {e:'🌦️', t:'이슬비'};
+  if(c<=67) return {e:'🌧️', t:'비'};
+  if(c<=77) return {e:'❄️', t:'눈'};
+  if(c<=82) return {e:'🌦️', t:'소나기'};
+  if(c<=86) return {e:'🌨️', t:'눈'};
+  return {e:'⛈️', t:'뇌우'};
+}
+function paintWeather(w){
+  const el = document.getElementById('hm-weather'); if(!el) return;
+  if(!w){ el.innerHTML = '<span class="meta">날씨를 불러오는 중…</span>'; return; }
+  const m = wmo(w.code), stale = Date.now()-w.at > 3600000;
+  el.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="font-size:30px;">${m.e}</span>
+      <b style="font-size:24px;">${w.temp}°</b>
+      <span class="meta">${m.t} · 최저 ${w.tmin}° / 최고 ${w.tmax}°</span>
+    </div>
+    <div class="meta" style="margin-top:8px;">☔ 강수확률 ${w.pop}%  ·  💨 ${w.wind}km/h  ·  🌅 ${w.sunrise}  🌇 ${w.sunset}</div>
+    ${stale?'<div class="meta" style="margin-top:4px; opacity:.7;">⚠️ 오프라인 — 마지막 조회값</div>':''}`;
+}
+async function fetchWeather(){
+  const r = await fetch(WX_URL); if(!r.ok) throw new Error('wx '+r.status);
+  const d = await r.json();
+  const w = {
+    temp: Math.round(d.current.temperature_2m),
+    code: d.current.weather_code,
+    wind: Math.round(d.current.wind_speed_10m),
+    pop:  d.daily.precipitation_probability_max[0],
+    tmax: Math.round(d.daily.temperature_2m_max[0]),
+    tmin: Math.round(d.daily.temperature_2m_min[0]),
+    sunrise: String(d.daily.sunrise[0]).slice(11,16),
+    sunset:  String(d.daily.sunset[0]).slice(11,16),
+    at: Date.now(),
+  };
+  localStorage.setItem('cm_weather', JSON.stringify(w));
+  return w;
+}
+let _wxBusy = false;
+async function renderWeather(force){
+  let w = null; try{ w = JSON.parse(localStorage.getItem('cm_weather')); }catch(e){}
+  paintWeather(w);
+  if(_wxBusy) return;
+  if(force === true || !w || Date.now()-w.at > 1800000){   /* 30분 캐시 */
+    _wxBusy = true;
+    try{ paintWeather(await fetchWeather()); }
+    catch(e){ if(!w){ const el=document.getElementById('hm-weather'); if(el) el.innerHTML='<span class="meta">날씨를 불러오지 못했습니다 (인터넷 확인)</span>'; } }
+    finally{ _wxBusy = false; }
+  }
+}
+
+/* ---------------- v4 초기화 ---------------- */
+(function v4Init(){
+  if(!S.get('cm_contacts', null) && !S.get('cm_seed4', false)){
+    S.set('cm_contacts', seedContacts()); S.set('cm_seed4', true);
+  }
+  renderContacts();
+  renderLost();
+  renderWeather();
 })();
 </script>
 </body>
