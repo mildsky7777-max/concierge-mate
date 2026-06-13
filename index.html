@@ -419,7 +419,7 @@ try{
     <div class="row" style="margin-bottom:8px;">
       <input id="g-name" placeholder="장소 이름" style="flex:1;">
       <select id="g-cat" style="width:118px; flex:none;">
-        <option>🍽️ 맛집</option><option>☕ 카페</option><option>🏝️ 관광</option>
+        <option>ℹ️ 정보</option><option>🍽️ 맛집</option><option>☕ 카페</option><option>🏝️ 관광</option>
         <option>🎢 액티비티</option><option>🛍️ 쇼핑</option><option>🏥 응급/편의</option>
       </select>
     </div>
@@ -468,6 +468,10 @@ try{
       <input id="gn-name" placeholder="게스트 이름 (선택)" style="flex:1;">
     </div>
     <div class="chips" id="gn-tagpick" style="margin-bottom:8px;"></div>
+    <div class="row" style="margin-bottom:8px;">
+      <label class="meta" style="flex:none;">🛎️ 체크아웃 예정</label>
+      <input type="date" id="gn-checkout" style="flex:1;">
+    </div>
     <div class="row">
       <textarea id="gn-note" placeholder="특이사항 (예: 고층 선호, 견과류 알레르기, 결혼기념일)"></textarea>
     </div>
@@ -613,6 +617,8 @@ try{
         <option value="dark">다크</option>
       </select>
     </div>
+    <div class="lbl">담당자 이름 <span class="meta">(요청 완료 처리 기록용 · 로그인 시 자동)</span></div>
+    <input id="s-staff" placeholder="예: 김민수" onchange="saveSettings()">
     <button class="btn ghost sm" style="margin-top:10px;" onclick="askNotif()">🔔 브라우저 알림 켜기 (예약 요청 알림)</button>
   </div>
   <div class="card">
@@ -704,6 +710,7 @@ try{
       <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-req" checked onchange="refreshBrief()">요청</label>
       <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-ho" checked onchange="refreshBrief()">인계</label>
       <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-lost" checked onchange="refreshBrief()">분실물</label>
+      <label style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="bf-ck" checked onchange="refreshBrief()">체크리스트</label>
     </div>
     <textarea id="brief-txt"></textarea>
     <pre id="brief-print"></pre>
@@ -727,15 +734,16 @@ const S = {
   get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
-const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_notes','cm_lost','cm_contacts','cm_settings','cm_fx','cm_seed2','cm_seed3','cm_seed4'];
+const KEYS = ['cm_req','cm_ho','cm_places','cm_phrases','cm_memos','cm_checklist','cm_checkstate','cm_guestcards','cm_notes','cm_lost','cm_contacts','cm_settings','cm_fx','cm_seed2','cm_seed3','cm_seed4','cm_seed5'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 const fmt = ts => { const d=new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sameDay = (a,b) => { const x=new Date(a), y=new Date(b); return x.getFullYear()===y.getFullYear() && x.getMonth()===y.getMonth() && x.getDate()===y.getDate(); };
 const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+const todayStr2 = () => { const d=new Date(), p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 function toLocalInput(ts){ const d=new Date(ts), p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
-const DEF_SET = {theme:'auto', hname:'더본호텔', hnameEn:'TheBorn Hotel Jeju', addr:'', addrEn:'', tel:'', ci:'15:00', co:'11:00', bf:'', wifi:''};
+const DEF_SET = {theme:'auto', hname:'더본호텔', hnameEn:'TheBorn Hotel Jeju', addr:'', addrEn:'', tel:'', ci:'15:00', co:'11:00', bf:'', wifi:'', staff:''};
 const getSettings = () => ({...DEF_SET, ...S.get('cm_settings', {})});
 
 /* ---------------- 토스트 & 실행취소 ---------------- */
@@ -873,10 +881,15 @@ function cancelReqEdit(){
   document.getElementById('r-cancel').style.display = 'none';
   if(typeof updateRoomNotePreview==='function') updateRoomNotePreview();
 }
+function currentStaffName(){
+  try{ if(typeof FB!=='undefined' && FB && FB.user) return FB.user.displayName || FB.user.email || ''; }catch(e){}
+  return getSettings().staff || '';
+}
 function cycleReq(id){
   const list = S.get('cm_req', []);
   const it = list.find(x=>x.id===id); if(!it) return;
-  it.st = (it.st+1)%3; if(it.st===2) it.done = Date.now();
+  it.st = (it.st+1)%3;
+  if(it.st===2){ it.done = Date.now(); it.doneBy = currentStaffName(); }
   S.set('cm_req', list); renderReq(); renderHome();
 }
 function delReq(id){
@@ -916,6 +929,7 @@ function renderReq(){
         ${x.due && x.st<2 ? `<div class="meta" style="margin-top:2px;">${dueLabel(x.due)}</div>` : ''}
         <p>${esc(x.txt)}</p>
         <span class="badge st s${x.st}" onclick="cycleReq('${x.id}')">● ${ST_LABEL[x.st]} → 탭하여 변경</span>
+        ${x.st===2 && x.doneBy ? `<span class="meta" style="margin-left:6px;">✓ 처리: ${esc(x.doneBy)}</span>` : ''}
         <div class="r-actions">
           <button class="btn ghost sm" onclick="editReq('${x.id}')">수정</button>
           <button class="btn danger sm" onclick="delReq('${x.id}')">삭제</button>
@@ -987,7 +1001,7 @@ function cancelHoEdit(){
 function toggleHo(id){
   const list = S.get('cm_ho', []);
   const it = list.find(x=>x.id===id);
-  if(it){ it.ok = !it.ok; S.set('cm_ho', list); renderHo(); renderHome(); }
+  if(it){ it.ok = !it.ok; it.confirmedAt = it.ok ? Date.now() : null; S.set('cm_ho', list); renderHo(); renderHome(); }
 }
 function delHo(id){
   const list = S.get('cm_ho', []);
@@ -1019,7 +1033,7 @@ function renderHo(){
     if(g !== lastGrp){ html += `<div class="grp">${g}</div>`; lastGrp = g; }
     html += `
     <div class="card ho ${x.imp?'imp':''} ${x.ok?'ok':''}">
-      <span class="meta">${esc(x.shift)} · ${fmt(x.ts)}${x.imp?' · <b style="color:var(--danger)">중요</b>':''}</span>
+      <span class="meta">${esc(x.shift)} · ${fmt(x.ts)}${x.imp?' · <b style="color:var(--danger)">중요</b>':''}${x.ok&&x.confirmedAt?` · ✓ 확인 ${fmt(x.confirmedAt)}`:''}</span>
       <p>${esc(x.txt)}</p>
       <button class="btn ghost sm" onclick="toggleHo('${x.id}')">${x.ok?'↩️ 미확인으로':'✅ 확인 완료'}</button>
       <button class="btn ghost sm" onclick="editHo('${x.id}')">수정</button>
@@ -1031,7 +1045,7 @@ function renderHo(){
 
 /* ----- 교대 브리핑 ----- */
 function makeBriefing(opts){
-  opts = opts || {req:true, ho:true, lost:true};
+  opts = opts || {req:true, ho:true, lost:true, ck:true};
   const s = getSettings(), n = new Date();
   const doneToday = S.get('cm_req', []).filter(x=>x.st===2 && x.done && sameDay(x.done, Date.now())).length;
   const L = [];
@@ -1057,12 +1071,19 @@ function makeBriefing(opts){
       L.push(`- ${x.item}${x.place?` (발견:${x.place})`:''}${x.store?` / 보관:${x.store}`:''}`);
     }); else L.push('- 없음');
   }
+  if(opts.ck){
+    const ck = getCk(), cst = S.get('cm_checkstate', {done:{}});
+    const inc = [];
+    ['day','night'].forEach(sh=>(ck[sh]||[]).forEach(it=>{ if(!(cst.done||{})[it.id]) inc.push((sh==='day'?'주간':'야간')+' · '+it.txt); }));
+    L.push(''); L.push(`■ 체크리스트 미완료 (${inc.length}건)`);
+    if(inc.length) inc.forEach(t=>L.push('- '+t)); else L.push('- 없음');
+  }
   L.push(''); L.push(`■ 오늘 완료 처리 ${doneToday}건`);
   return L.join('\n');
 }
 function briefOpts(){
   const g = id => { const el = document.getElementById(id); return el ? el.checked : true; };
-  return { req:g('bf-req'), ho:g('bf-ho'), lost:g('bf-lost') };
+  return { req:g('bf-req'), ho:g('bf-ho'), lost:g('bf-lost'), ck:g('bf-ck') };
 }
 function refreshBrief(){
   const txt = makeBriefing(briefOpts());
@@ -1081,7 +1102,7 @@ function printBrief(){
 }
 
 /* ================= 가이드 ================= */
-const G_CATS = ['전체','⭐ 즐겨찾기','🍽️ 맛집','☕ 카페','🏝️ 관광','🎢 액티비티','🛍️ 쇼핑','🏥 응급/편의'];
+const G_CATS = ['전체','⭐ 즐겨찾기','ℹ️ 정보','🍽️ 맛집','☕ 카페','🏝️ 관광','🎢 액티비티','🛍️ 쇼핑','🏥 응급/편의'];
 let gdFilter = '전체', gdEditId = null;
 
 function openGdForm(editId){
@@ -1476,7 +1497,7 @@ function renderMm(){
 }
 
 /* ================= 설정 ================= */
-const SET_FIELDS = {hname:'s-hname', hnameEn:'s-hnameEn', addr:'s-addr', addrEn:'s-addrEn',
+const SET_FIELDS = {hname:'s-hname', hnameEn:'s-hnameEn', addr:'s-addr', addrEn:'s-addrEn', staff:'s-staff',
                     tel:'s-tel', ci:'s-ci', co:'s-co', bf:'s-bf', wifi:'s-wifi'};
 function renderSet(){
   const s = getSettings();
@@ -2058,7 +2079,7 @@ function saveGuest(){
   if(!room){ toast('객실 번호를 입력하세요'); return; }
   if(!note && !guestTags.length && !name){ toast('태그나 내용을 입력하세요'); return; }
   const list = S.get('cm_notes', []);
-  const data = { room, name, tags: guestTags.slice(), note };
+  const data = { room, name, tags: guestTags.slice(), note, checkout: document.getElementById('gn-checkout').value || '' };
   if(guestEditId){ const it = list.find(x=>x.id===guestEditId); if(it) Object.assign(it, data); toast('게스트 노트를 수정했습니다'); }
   else list.unshift({ id:uid(), ...data, ts:Date.now() });
   S.set('cm_notes', list); cancelGuestEdit(); renderGuests(); renderReq();
@@ -2069,6 +2090,7 @@ function editGuest(id){
   document.getElementById('gn-room').value = it.room;
   document.getElementById('gn-name').value = it.name || '';
   document.getElementById('gn-note').value = it.note || '';
+  document.getElementById('gn-checkout').value = it.checkout || '';
   guestTags = (it.tags||[]).slice(); buildGnTags();
   document.getElementById('gn-add').textContent = '수정 저장';
   document.getElementById('gn-cancel').style.display = '';
@@ -2076,7 +2098,7 @@ function editGuest(id){
 }
 function cancelGuestEdit(){
   guestEditId = null; guestTags = [];
-  ['gn-room','gn-name','gn-note'].forEach(i=>document.getElementById(i).value='');
+  ['gn-room','gn-name','gn-note','gn-checkout'].forEach(i=>document.getElementById(i).value='');
   buildGnTags();
   document.getElementById('gn-add').textContent = '저장';
   document.getElementById('gn-cancel').style.display = 'none';
@@ -2107,7 +2129,7 @@ function renderGuests(){
   document.getElementById('gn-list').innerHTML = list.length ? list.map(x=>`
     <div class="card gn">
       <div class="row" style="justify-content:space-between;">
-        <div><span class="gn-room">${esc(x.room)}호</span><h3>${esc(x.name||'게스트')}</h3></div>
+        <div><span class="gn-room">${esc(x.room)}호</span><h3>${esc(x.name||'게스트')}</h3>${x.checkout && x.checkout < todayStr2() ? ' <span class="badge" style="background:var(--soft); color:var(--muted);">퇴실</span>' : (x.checkout?` <span class="badge" style="background:var(--gold-soft); color:var(--room-ink);">🛎️ ~${esc(x.checkout.slice(5))}</span>`:'')}</div>
         <div>
           <button class="btn ghost sm" onclick="editGuest('${x.id}')">수정</button>
           <button class="btn danger sm" onclick="delGuest('${x.id}')">삭제</button>
@@ -2265,9 +2287,10 @@ function renderLost(){
     .sort((a,b)=> (a.status==='반환완료')-(b.status==='반환완료') || b.ts-a.ts);
   box.innerHTML = list.length ? list.map(x=>{
     const done = x.status==='반환완료';
+    const overdue = !done && (Date.now()-x.ts > 30*86400000);
     return `<div class="card lf" style="${done?'opacity:.6':''}">
       <div class="row" style="justify-content:space-between;">
-        <span class="lf-item">🧳 ${esc(x.item)}</span>
+        <span class="lf-item">🧳 ${esc(x.item)}${overdue?' <span class="badge" style="background:var(--danger-bg); color:var(--danger);">⚠️ 보관 30일 초과</span>':''}</span>
         <span class="badge lf-st ${done?'done':'keep'}" onclick="toggleLost('${x.id}')">● ${esc(x.status)} → 탭</span>
       </div>
       <div class="lf-meta">
@@ -2314,6 +2337,7 @@ function paintWeather(w){
       <span class="meta">${m.t} · 최저 ${w.tmin}° / 최고 ${w.tmax}°</span>
     </div>
     <div class="meta" style="margin-top:8px;">☔ 강수확률 ${w.pop}%  ·  💨 ${w.wind}km/h  ·  🌅 ${w.sunrise}  🌇 ${w.sunset}</div>
+    ${(w.code>=61 || w.pop>=80) ? '<div style="margin-top:8px; background:var(--danger-bg); color:var(--danger); border-radius:8px; padding:7px 10px; font-size:12.5px; font-weight:700;">⛈️ 기상 주의 — 실내 대안 코스(여미지·오설록·아쿠아플라넷 등) 안내 권장</div>' : ''}
     ${stale?'<div class="meta" style="margin-top:4px; opacity:.7;">⚠️ 오프라인 — 마지막 조회값</div>':''}`;
 }
 async function fetchWeather(){
@@ -2359,10 +2383,27 @@ function updateRoomNotePreview(){
   } else el.style.display = 'none';
 }
 
+/* ---------------- 제주 FAQ 시드 (가이드 'ℹ️ 정보' 카테고리) ---------------- */
+function seedFaq(){
+  return [
+    {cat:'ℹ️ 정보', name:'한라산 탐방 예약 (성판악·관음사)', dist:'', tel:'', desc:'정상(백록담) 코스인 성판악·관음사는 사전 탐방예약 필수(1일 입산 인원 제한). "한라산 탐방예약시스템"에서 예약. ※ 인원·운영시간 수시 변동 — 당일 재확인 권장.'},
+    {cat:'ℹ️ 정보', name:'외국인 렌터카 (국제면허)', dist:'', tel:'', desc:'국제운전면허증 + 본국 면허증 + 여권 모두 지참 필수. 여권 영문 이름과 면허 정보가 일치해야 함. 일부 국가는 인정 안 될 수 있어 사전 확인 권장.'},
+    {cat:'ℹ️ 정보', name:'공항 리무진 600번', dist:'', tel:'', desc:'제주공항 ↔ 중문·서귀포 주요 호텔 운행. 호텔 앞 정차 여부·첫차/막차 시간은 시즌마다 다르니 당일 확인 권장.'},
+    {cat:'ℹ️ 정보', name:'우천·태풍 시 실내 코스', dist:'', tel:'', desc:'여미지식물원·오설록 티뮤지엄·아쿠아플라넷(서귀포)·박물관 등 실내 대안 안내. 기상특보 시 야외·해안 활동 자제 권고.'},
+    {cat:'ℹ️ 정보', name:'성산일출봉·우도 당일치기', dist:'차 약 1시간(동쪽)', tel:'', desc:'성산일출봉은 일출 명소. 우도는 성산항에서 배편 이용(물때·배 시간 확인). 동부 일정은 이른 출발 권장.'},
+  ].map(p=>({...p, id:uid()+Math.random().toString(36).slice(2,4), fav:false}));
+}
+
 /* ---------------- v4 초기화 ---------------- */
 (function v4Init(){
   if(!S.get('cm_contacts', null) && !S.get('cm_seed4', false)){
     S.set('cm_contacts', seedContacts()); S.set('cm_seed4', true);
+  }
+  if(!S.get('cm_seed5', false)){   /* 제주 FAQ 1회 보강(이름 중복 시 건너뜀) */
+    const pl = S.get('cm_places', []); const names = new Set(pl.map(p=>p.name));
+    seedFaq().forEach(f=>{ if(!names.has(f.name)) pl.push(f); });
+    S.set('cm_places', pl); S.set('cm_seed5', true);
+    if(typeof renderGd==='function') renderGd();
   }
   const rr = document.getElementById('r-room');
   if(rr) rr.addEventListener('input', updateRoomNotePreview);
