@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="컨시어지">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
 <title>더본호텔 컨시어지 메이트</title>
 <script>
 /* 다크모드 깜빡임 방지: 본문 렌더 전에 테마 적용 */
@@ -479,7 +482,8 @@ try{
     <input id="lf-contact" placeholder="게스트 연락처/객실 (선택)" style="margin-bottom:8px;">
     <div class="row">
       <input id="lf-note" placeholder="메모 (선택)" style="flex:1;">
-      <button class="btn gold sm" onclick="addLost()">등록</button>
+      <button class="btn ghost sm" id="lf-cancel" style="display:none;" onclick="cancelLostEdit()">취소</button>
+      <button class="btn gold sm" id="lf-add" onclick="saveLost()">등록</button>
     </div>
   </div>
   <div class="chips" id="lf-filter">
@@ -2167,20 +2171,42 @@ function renderContacts(){
 }
 
 /* ---------------- 분실물 대장 ---------------- */
-let lostFilter = 'all';
-function addLost(){
+let lostFilter = 'all', lostEditId = null;
+function saveLost(){
   const item = document.getElementById('lf-item').value.trim();
   if(!item){ toast('분실물명을 입력하세요'); return; }
-  const list = S.get('cm_lost', []);
-  list.unshift({ id:uid(), item,
+  const data = { item,
     place: document.getElementById('lf-place').value.trim(),
     store: document.getElementById('lf-store').value.trim(),
     contact: document.getElementById('lf-contact').value.trim(),
-    note: document.getElementById('lf-note').value.trim(),
-    status:'보관중', ts:Date.now() });
-  S.set('cm_lost', list);
+    note: document.getElementById('lf-note').value.trim() };
+  const list = S.get('cm_lost', []);
+  if(lostEditId){
+    const it = list.find(x=>x.id===lostEditId);
+    if(it) Object.assign(it, data);
+    toast('분실물 기록을 수정했습니다');
+  } else {
+    list.unshift({ id:uid(), ...data, status:'보관중', ts:Date.now() });
+  }
+  S.set('cm_lost', list); cancelLostEdit(); renderLost(); renderHome();
+}
+function editLost(id){
+  const it = S.get('cm_lost', []).find(x=>x.id===id); if(!it) return;
+  lostEditId = id;
+  document.getElementById('lf-item').value = it.item || '';
+  document.getElementById('lf-place').value = it.place || '';
+  document.getElementById('lf-store').value = it.store || '';
+  document.getElementById('lf-contact').value = it.contact || '';
+  document.getElementById('lf-note').value = it.note || '';
+  document.getElementById('lf-add').textContent = '수정 저장';
+  document.getElementById('lf-cancel').style.display = '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function cancelLostEdit(){
+  lostEditId = null;
   ['lf-item','lf-place','lf-store','lf-contact','lf-note'].forEach(i=>document.getElementById(i).value='');
-  renderLost(); renderHome();
+  document.getElementById('lf-add').textContent = '등록';
+  document.getElementById('lf-cancel').style.display = 'none';
 }
 function toggleLost(id){
   const list = S.get('cm_lost', []);
@@ -2217,7 +2243,7 @@ function renderLost(){
         ${x.note?`📝 ${esc(x.note)}<br>`:''}
         <span class="meta">등록 ${fmt(x.ts)}</span>
       </div>
-      <div class="r-actions"><button class="btn danger sm" onclick="delLost('${x.id}')">삭제</button></div>
+      <div class="r-actions"><button class="btn ghost sm" onclick="editLost('${x.id}')">수정</button><button class="btn danger sm" onclick="delLost('${x.id}')">삭제</button></div>
     </div>`;}).join('') : '<div class="empty">해당하는 분실물이 없습니다.</div>';
 }
 (function bindLostFilter(){
@@ -2309,6 +2335,8 @@ function updateRoomNotePreview(){
   renderContacts();
   renderLost();
   renderWeather();
+  /* 서비스워커 등록 — 완전 오프라인/설치형 PWA */
+  if('serviceWorker' in navigator) window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 })();
 </script>
 </body>
